@@ -74,36 +74,6 @@ export default function SchedulePage() {
     'Belgium', 'Austria', 'Switzerland', 'Poland', 'Czech Republic'
   ]
 
-  const handleInputChange = (section: string, field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [field]: value
-      }
-    }))
-  }
-
-  const handleAddressChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [field]: value
-      }
-    }))
-  }
-
-  const handleContactChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      contact: {
-        ...prev.contact,
-        [field]: value
-      }
-    }))
-  }
-
   const addPackage = () => {
     setFormData(prev => ({
       ...prev,
@@ -223,7 +193,7 @@ export default function SchedulePage() {
                   <input
                     type="date"
                     value={formData.pickupDate}
-                    onChange={(e) => handleInputChange('pickupDate', '', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, pickupDate: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -231,7 +201,7 @@ export default function SchedulePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Time *</label>
                   <select
                     value={formData.pickupTime}
-                    onChange={(e) => handleInputChange('pickupTime', '', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, pickupTime: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Time Slot</option>
@@ -255,7 +225,7 @@ export default function SchedulePage() {
                   <input
                     type="text"
                     value={formData.address.street}
-                    onChange={(e) => handleAddressChange('street', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, address: { ...prev.address, street: e.target.value } }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="123 Main Street"
                   />
@@ -266,7 +236,7 @@ export default function SchedulePage() {
                     <input
                       type="text"
                       value={formData.address.city}
-                      onChange={(e) => handleAddressChange('city', e.target.value)}
+                      onChange={e => setFormData(prev => ({ ...prev, address: { ...prev.address, city: e.target.value } }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Berlin"
                     />
@@ -276,7 +246,7 @@ export default function SchedulePage() {
                     <input
                       type="text"
                       value={formData.address.postalCode}
-                      onChange={(e) => handleAddressChange('postalCode', e.target.value)}
+                      onChange={e => setFormData(prev => ({ ...prev, address: { ...prev.address, postalCode: e.target.value } }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="10115"
                     />
@@ -285,7 +255,7 @@ export default function SchedulePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
                     <select
                       value={formData.address.country}
-                      onChange={(e) => handleAddressChange('country', e.target.value)}
+                      onChange={e => setFormData(prev => ({ ...prev, address: { ...prev.address, country: e.target.value } }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select Country</option>
@@ -299,7 +269,7 @@ export default function SchedulePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Special Instructions</label>
                   <textarea
                     value={formData.address.instructions}
-                    onChange={(e) => handleAddressChange('instructions', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, address: { ...prev.address, instructions: e.target.value } }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     placeholder="Any special instructions for pickup (e.g., building access, gate code)"
@@ -320,7 +290,7 @@ export default function SchedulePage() {
                   <input
                     type="text"
                     value={formData.contact.name}
-                    onChange={(e) => handleContactChange('name', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, contact: { ...prev.contact, name: e.target.value } }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="John Doe"
                   />
@@ -330,7 +300,7 @@ export default function SchedulePage() {
                   <input
                     type="tel"
                     value={formData.contact.phone}
-                    onChange={(e) => handleContactChange('phone', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, contact: { ...prev.contact, phone: e.target.value } }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="+49 123 456 789"
                   />
@@ -340,7 +310,7 @@ export default function SchedulePage() {
                   <input
                     type="email"
                     value={formData.contact.email}
-                    onChange={(e) => handleContactChange('email', e.target.value)}
+                    onChange={e => setFormData(prev => ({ ...prev, contact: { ...prev.contact, email: e.target.value } }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="john@example.com"
                   />
