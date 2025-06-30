@@ -206,7 +206,7 @@ export default function HomePage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
-      </div>
+            </div>
     )
   }
 
@@ -274,7 +274,7 @@ export default function HomePage() {
                 >
                   {t.billing}
                   <ChevronRight className="h-4 w-4 ml-1 text-green-600" />
-                </button>
+              </button>
                 {/* 预留气泡/徽章挂载点 */}
                 {/* <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-2 py-0.5 shadow">1</div> */}
               </div>
@@ -325,11 +325,11 @@ export default function HomePage() {
                           >
                             <Share2 className="h-4 w-4" />
                           </button>
-                        </div>
-                      </div>
+          </div>
+        </div>
                     ))}
                   </div>
-                </div>
+        </div>
               )}
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-            </div>
+          </div>
             {/* Billing Tab (4) */}
             <div className="w-full">
               <button
@@ -455,7 +455,7 @@ export default function HomePage() {
           <p className="text-xl text-brown-700 mb-8 max-w-3xl mx-auto">
             {t.connectWithLeading}
           </p>
-        </div>
+                </div>
       </section>
 
       {/* Monthly Billing Section */}
