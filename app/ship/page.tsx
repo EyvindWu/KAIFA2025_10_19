@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Link from 'next/link'
 import { 
   ArrowLeft,
@@ -12,8 +12,18 @@ import {
   Calendar,
   Clock,
   Shield,
-  CheckCircle
+  CheckCircle,
+  BookOpen,
+  Trash2,
+  Settings
 } from 'lucide-react'
+import AddressBookIcon from '../components/icons/AddressBookIcon'
+import DeleteIcon from '../components/icons/DeleteIcon'
+import dynamic from 'next/dynamic'
+
+const SenderIcon = dynamic(() => import('../components/icons/SenderIcon'), { ssr: false })
+
+
 
 export default function ShipPage() {
   const [step, setStep] = useState(1)
@@ -37,22 +47,64 @@ export default function ShipPage() {
     recipientCountry: '',
     
     // Package info
-    packageType: 'package',
-    weight: '',
-    length: '',
-    width: '',
-    height: '',
-    description: '',
+    packages: [{
+      packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false,
+      needsPallet: false, palletSize: '', sameDayPickup: false
+    }],
     
     // Service options
-    serviceType: 'standard',
-    insurance: false,
-    pickupDate: '',
-    pickupTime: '',
+    paymentMethod: 'credit_card',
     
-    // Payment
-    paymentMethod: 'credit_card'
+    // 新增KFCode和addressBook
+    kfCode: '', addressBook: '',
+    // 新增延时取货
+    delayedPickup: false
   })
+  const [activePackageIdx, setActivePackageIdx] = useState(0)
+  const [useDefaultSender, setUseDefaultSender] = useState(false)
+
+  const contactList = [
+    { key: 'alice', label: 'Alice (Berlin)' },
+    { key: 'bob', label: 'Bob (Munich)' },
+    { key: 'charlie', label: 'Charlie (Paris)' }
+  ];
+
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const contactInputRef = useRef<HTMLInputElement>(null);
+
+  // 简单的发件人地址簿
+  const senderAddressBook = [
+    {
+      name: 'Alice Smith',
+      email: 'alice.smith@email.com',
+      phone: '+49 111222333',
+      address: 'Aliceweg 10',
+      city: 'Hamburg',
+      postalCode: '20095',
+      country: 'Germany'
+    },
+    {
+      name: 'Bob Lee',
+      email: 'bob.lee@email.com',
+      phone: '+49 444555666',
+      address: 'Bobstrasse 22',
+      city: 'Frankfurt',
+      postalCode: '60311',
+      country: 'Germany'
+    },
+    {
+      name: 'Carol Wang',
+      email: 'carol.wang@email.com',
+      phone: '+49 777888999',
+      address: 'Carolplatz 5',
+      city: 'Stuttgart',
+      postalCode: '70173',
+      country: 'Germany'
+    }
+  ];
+
+  const [selectedSenderIndex, setSelectedSenderIndex] = useState(-1);
+  const [saveToAddressBook, setSaveToAddressBook] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -74,18 +126,60 @@ export default function ShipPage() {
 
   const serviceTypes = [
     { id: 'standard', name: 'Standard Delivery', price: '€15.99', time: '3-5 business days' },
-    { id: 'express', name: 'Express Delivery', price: '€29.99', time: '1-2 business days' },
-    { id: 'overnight', name: 'Overnight Delivery', price: '€49.99', time: 'Next business day' }
+    { id: 'express', name: 'Express Delivery', price: '€29.99', time: '1-2 business days' }
   ]
 
   const countries = [
     'Germany', 'France', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Austria', 'Switzerland'
   ]
 
+  // 3. Recipient Info顶部添加KF代码和通讯录
+  const addressBookData: { [key: string]: { recipientName: string; recipientEmail: string; recipientPhone: string; recipientAddress: string; recipientCity: string; recipientPostalCode: string; recipientCountry: string } } = {
+    alice: { recipientName: 'Alice', recipientEmail: 'alice@email.com', recipientPhone: '+49 111111', recipientAddress: 'Alice St 2', recipientCity: 'Berlin', recipientPostalCode: '10115', recipientCountry: 'Germany' },
+    bob: { recipientName: 'Bob', recipientEmail: 'bob@email.com', recipientPhone: '+49 222222', recipientAddress: 'Bob Ave 3', recipientCity: 'Munich', recipientPostalCode: '80331', recipientCountry: 'Germany' }
+  }
+
+  const handleContactSelect = (key: string) => {
+    setFormData(prev => ({ ...prev, addressBook: key, ...addressBookData[key] }));
+    setShowContactDropdown(false);
+    // 失去焦点
+    contactInputRef.current?.blur();
+  };
+
   const renderStep1 = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Sender Information</h2>
       
+      {/* 地址簿选择 */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">选择发件人地址簿</label>
+        <select
+          value={selectedSenderIndex}
+          onChange={(e) => {
+            const index = parseInt(e.target.value);
+            setSelectedSenderIndex(index);
+            if (index >= 0) {
+              const sender = senderAddressBook[index];
+              setFormData(prev => ({
+                ...prev,
+                senderName: sender.name,
+                senderEmail: sender.email,
+                senderPhone: sender.phone,
+                senderAddress: sender.address,
+                senderCity: sender.city,
+                senderPostalCode: sender.postalCode,
+                senderCountry: sender.country
+              }));
+            }
+          }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value={-1}>请选择发件人</option>
+          {senderAddressBook.map((sender, index) => (
+            <option key={index} value={index}>{sender.name}</option>
+          ))}
+        </select>
+      </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
@@ -94,10 +188,8 @@ export default function ShipPage() {
             value={formData.senderName}
             onChange={(e) => handleInputChange('senderName', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
           <input
@@ -105,10 +197,8 @@ export default function ShipPage() {
             value={formData.senderEmail}
             onChange={(e) => handleInputChange('senderEmail', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
           <input
@@ -116,17 +206,14 @@ export default function ShipPage() {
             value={formData.senderPhone}
             onChange={(e) => handleInputChange('senderPhone', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
           <select
             value={formData.senderCountry}
             onChange={(e) => handleInputChange('senderCountry', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           >
             <option value="">Select Country</option>
             {countries.map(country => (
@@ -134,7 +221,6 @@ export default function ShipPage() {
             ))}
           </select>
         </div>
-        
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
           <input
@@ -142,10 +228,8 @@ export default function ShipPage() {
             value={formData.senderAddress}
             onChange={(e) => handleInputChange('senderAddress', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
           <input
@@ -153,19 +237,27 @@ export default function ShipPage() {
             value={formData.senderCity}
             onChange={(e) => handleInputChange('senderCity', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
-          <input
-            type="text"
-            value={formData.senderPostalCode}
-            onChange={(e) => handleInputChange('senderPostalCode', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+            <input
+              type="text"
+              value={formData.senderPostalCode}
+              onChange={(e) => handleInputChange('senderPostalCode', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <label className="flex items-center ml-2 mt-6">
+            <input
+              type="checkbox"
+              checked={saveToAddressBook}
+              onChange={e => setSaveToAddressBook(e.target.checked)}
+              className="h-4 w-4 text-blue-600"
+            />
+            <span className="ml-2 text-sm text-black">保存至地址簿</span>
+          </label>
         </div>
       </div>
     </div>
@@ -174,7 +266,43 @@ export default function ShipPage() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Recipient Information</h2>
-      
+      <div className="mb-2 flex gap-4 relative">
+        <input type="text" placeholder="Enter KF Code" value={formData.kfCode} onChange={e => setFormData(prev => ({ ...prev, kfCode: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-md" />
+        <div className="flex-1 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <AddressBookIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            ref={contactInputRef}
+            type="text"
+            placeholder="查找收件人"
+            value={formData.addressBook}
+            onFocus={() => setShowContactDropdown(true)}
+            onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
+            onChange={e => {
+              const value = e.target.value;
+              setFormData(prev => ({ ...prev, addressBook: value }));
+              if (addressBookData[value]) {
+                setFormData(prev => ({ ...prev, ...addressBookData[value] }));
+              }
+            }}
+            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {showContactDropdown && (
+            <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg">
+              {contactList.map(contact => (
+                <div
+                  key={contact.key}
+                  className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
+                  onMouseDown={() => handleContactSelect(contact.key)}
+                >
+                  {contact.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
@@ -183,7 +311,6 @@ export default function ShipPage() {
             value={formData.recipientName}
             onChange={(e) => handleInputChange('recipientName', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
         
@@ -194,7 +321,6 @@ export default function ShipPage() {
             value={formData.recipientEmail}
             onChange={(e) => handleInputChange('recipientEmail', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
         
@@ -205,7 +331,6 @@ export default function ShipPage() {
             value={formData.recipientPhone}
             onChange={(e) => handleInputChange('recipientPhone', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
         
@@ -215,7 +340,6 @@ export default function ShipPage() {
             value={formData.recipientCountry}
             onChange={(e) => handleInputChange('recipientCountry', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           >
             <option value="">Select Country</option>
             {countries.map(country => (
@@ -231,7 +355,6 @@ export default function ShipPage() {
             value={formData.recipientAddress}
             onChange={(e) => handleInputChange('recipientAddress', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
         
@@ -242,7 +365,6 @@ export default function ShipPage() {
             value={formData.recipientCity}
             onChange={(e) => handleInputChange('recipientCity', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
         
@@ -253,7 +375,6 @@ export default function ShipPage() {
             value={formData.recipientPostalCode}
             onChange={(e) => handleInputChange('recipientPostalCode', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
       </div>
@@ -263,187 +384,343 @@ export default function ShipPage() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Package & Service Details</h2>
-      
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Package Type *</label>
-          <select
-            value={formData.packageType}
-            onChange={(e) => handleInputChange('packageType', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            <option value="package">Package</option>
-            <option value="document">Document</option>
-            <option value="fragile">Fragile</option>
-            <option value="electronics">Electronics</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg) *</label>
-          <input
-            type="number"
-            step="0.1"
-            value={formData.weight}
-            onChange={(e) => handleInputChange('weight', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Length (cm)</label>
-          <input
-            type="number"
-            value={formData.length}
-            onChange={(e) => handleInputChange('length', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
-          <input
-            type="number"
-            value={formData.width}
-            onChange={(e) => handleInputChange('width', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-          <input
-            type="number"
-            value={formData.height}
-            onChange={(e) => handleInputChange('height', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Describe the contents of your package..."
-          />
-        </div>
-      </div>
-
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Service Options</h3>
-        
-        <div className="space-y-4">
-          {serviceTypes.map((service) => (
-            <label key={service.id} className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer">
-              <input
-                type="radio"
-                name="serviceType"
-                value={service.id}
-                checked={formData.serviceType === service.id}
-                onChange={(e) => handleInputChange('serviceType', e.target.value)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-              />
-              <div className="ml-3 flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-900">{service.name}</span>
-                  <span className="text-lg font-bold text-blue-600">{service.price}</span>
+      {formData.packages.map((pkg, idx) => (
+        <div key={idx} className="mb-4">
+          <div className={`flex items-center justify-between cursor-pointer rounded p-2 ${activePackageIdx === idx ? 'bg-blue-600 text-white font-bold' : 'bg-blue-600 text-white'}`} onClick={() => setActivePackageIdx(idx)}>
+            <div className="flex items-center gap-2">
+              {activePackageIdx === idx ? <span>▼</span> : <span>▶</span>}
+              <span>Package {idx + 1}</span>
+              {formData.packages.length > 1 && idx > 0 && (
+                <button
+                  type="button"
+                  className="ml-2 text-white hover:text-red-400 flex items-center"
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (window.confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
+                      setFormData(prev => ({
+                        ...prev,
+                        packages: prev.packages.filter((_, i) => i !== idx)
+                      }))
+                      if (activePackageIdx === idx && idx > 0) setActivePackageIdx(idx - 1)
+                    }
+                  }}
+                  aria-label="Delete this package"
+                >
+                  <DeleteIcon className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          </div>
+          {activePackageIdx === idx && (
+            <div className="space-y-4 bg-white border rounded-b p-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Package Type</label>
+                  <select value={pkg.packageType} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, packageType: v } : p) }))
+                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="package">Package</option>
+                    <option value="document">Document</option>
+                    <option value="fragile">Fragile</option>
+                    <option value="electronics">Electronics</option>
+                  </select>
                 </div>
-                <p className="text-sm text-gray-500">{service.time}</p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                  <input type="text" value={pkg.weight} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, weight: v } : p) }))
+                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Length (cm)</label>
+                  <input type="text" value={pkg.length} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, length: v } : p) }))
+                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
+                  <input type="text" value={pkg.width} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, width: v } : p) }))
+                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                  <input type="text" value={pkg.height} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, height: v } : p) }))
+                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea value={pkg.description} onChange={e => {
+                    const v = e.target.value
+                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, description: v } : p) }))
+                  }} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
               </div>
-            </label>
-          ))}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Service Options</h3>
+                <div className="space-y-4">
+                  {serviceTypes.map((service) => (
+                    <label key={service.id} className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer bg-blue-50">
+                      <input type="radio" name={`serviceType${idx}`} value={service.id} checked={pkg.serviceType === service.id} onChange={e => {
+                        const v = e.target.value
+                        setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, serviceType: v } : p) }))
+                      }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                      <div className="ml-3 flex-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-900">{service.name}</span>
+                          <span className="text-lg font-bold text-blue-600">{service.price}</span>
+                        </div>
+                        <p className="text-sm text-gray-500">{service.time}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center">
+                      <input type="checkbox" checked={pkg.insurance} onChange={e => {
+                        const v = e.target.checked
+                        setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, insurance: v } : p) }))
+                      }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                      <span className="ml-2 text-sm text-gray-700">Add insurance coverage (+€5.99)</span>
+                    </label>
+                  </div>
+                  
+                  {/* 板架选项 */}
+                  <div className="border-t pt-4">
+                    <div className="mb-3 font-medium text-gray-700">需要板架？<span className="text-red-500 ml-1">*</span></div>
+                    <div className="flex gap-6 mb-2">
+                      <label className="flex items-center">
+                        <input type="radio" name={`needsPallet${idx}`} value="yes" checked={pkg.needsPallet === true} onChange={() => {
+                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, needsPallet: true } : p) }))
+                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                        <span className="ml-2 text-sm text-black">YES</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="radio" name={`needsPallet${idx}`} value="no" checked={pkg.needsPallet === false} onChange={() => {
+                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, needsPallet: false, palletSize: '' } : p) }))
+                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                        <span className="ml-2 text-sm text-black">NO</span>
+                      </label>
+                    </div>
+                    {pkg.needsPallet === true && (
+                      <div className="ml-6 space-y-2">
+                        <div className="mb-1 text-sm text-gray-700">请选择板架尺寸 <span className="text-red-500">*</span></div>
+                        <label className="flex items-center">
+                          <input type="radio" name={`palletSize${idx}`} value="100x50" checked={pkg.palletSize === '100x50'} onChange={e => {
+                            const v = e.target.value
+                            setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
+                          }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                          <span className="ml-2 text-sm text-gray-700">1. 100cm × 50cm</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input type="radio" name={`palletSize${idx}`} value="140x80" checked={pkg.palletSize === '140x80'} onChange={e => {
+                            const v = e.target.value
+                            setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
+                          }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                          <span className="ml-2 text-sm text-gray-700">2. 140cm × 80cm</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
-        <div className="mt-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.insurance}
-              onChange={(e) => handleInputChange('insurance', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm text-gray-700">Add insurance coverage (+€5.99)</span>
-          </label>
+      ))}
+      <div className="flex items-center justify-center mt-6">
+        <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
+          setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false }] }))
+          setActivePackageIdx(formData.packages.length)
+        }}>
+          <span className="text-2xl mr-2">+</span>
+          <span className="font-medium text-base">Add Package {formData.packages.length + 1}</span>
+        </button>
+      </div>
+      <div className="mt-8 flex items-start bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <input
+          type="checkbox"
+          checked={formData.delayedPickup}
+          onChange={e => setFormData(prev => ({ ...prev, delayedPickup: e.target.checked }))}
+          className="h-5 w-5 mt-0.5 mr-3"
+        />
+        <div className="text-sm text-yellow-900">
+          <span className="font-bold">延时取货</span><br />
+          快发快递支持下午16:00后上门取货，以确保发货进度，请尽快准备好包裹并粘贴信息，我们会与您联系。
         </div>
       </div>
     </div>
   )
 
   const renderStep4 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Review & Payment</h2>
-      
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="font-medium text-gray-900 mb-4">Order Summary</h3>
-        
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Service Type:</span>
-            <span className="font-medium">
-              {serviceTypes.find(s => s.id === formData.serviceType)?.name}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Base Price:</span>
-            <span className="font-medium">
-              {serviceTypes.find(s => s.id === formData.serviceType)?.price}
-            </span>
-          </div>
-          {formData.insurance && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Insurance:</span>
-              <span className="font-medium">€5.99</span>
+  <div className="space-y-6">
+    <h2 className="text-xl font-semibold text-gray-900 mb-4">Review Order</h2>
+    
+    {/* Sender & Recipient Information */}
+    <div className="bg-gray-50 rounded-lg p-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Sender Information */}
+        <div>
+          <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+            <User className="h-5 w-5 mr-2 text-blue-600" />
+            Sender
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="text-gray-600">Name:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderName || 'Not provided'}</span>
             </div>
-          )}
-          <div className="border-t pt-3">
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total:</span>
-              <span className="text-blue-600">
-                {formData.insurance ? '€35.98' : '€29.99'}
-              </span>
+            <div>
+              <span className="text-gray-600">Email:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderEmail || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Phone:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderPhone || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Country:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderCountry || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Address:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderAddress || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">City:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderCity || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Postal Code:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.senderPostalCode || 'Not provided'}</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
-        <select
-          value={formData.paymentMethod}
-          onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        >
-          <option value="credit_card">Credit Card</option>
-          <option value="paypal">PayPal</option>
-          <option value="bank_transfer">Bank Transfer</option>
-        </select>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-          <div>
-            <h4 className="font-medium text-blue-900">Secure Payment</h4>
-            <p className="text-sm text-blue-700 mt-1">
-              Your payment information is encrypted and secure. We use industry-standard SSL encryption.
-            </p>
+        {/* Recipient Information */}
+        <div>
+          <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+            <MapPin className="h-5 w-5 mr-2 text-green-600" />
+            Recipient
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="text-gray-600">Name:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientName || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Email:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientEmail || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Phone:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientPhone || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Country:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientCountry || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Address:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientAddress || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">City:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientCity || 'Not provided'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Postal Code:</span>
+              <span className="ml-2 font-medium text-gray-900">{formData.recipientPostalCode || 'Not provided'}</span>
+            </div>
+            {formData.kfCode && (
+              <div>
+                <span className="text-gray-600">KF Code:</span>
+                <span className="ml-2 font-medium text-gray-900">{formData.kfCode}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
-  )
+
+    {/* Package Information */}
+    <div className="bg-gray-50 rounded-lg p-6">
+      <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+        <Package className="h-5 w-5 mr-2 text-orange-600" />
+        Package Information ({formData.packages.length} package{formData.packages.length > 1 ? 's' : ''})
+      </h3>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {formData.packages.map((pkg, idx) => (
+          <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white">
+            <h4 className="font-medium text-gray-900 mb-3">Package {idx + 1}</h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-gray-600">Type:</span>
+                <span className="ml-2 font-medium text-gray-900 capitalize">{pkg.packageType}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Weight:</span>
+                <span className="ml-2 font-medium text-gray-900">{pkg.weight || 'Not provided'} kg</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Length:</span>
+                <span className="ml-2 font-medium text-gray-900">{pkg.length || 'Not provided'} cm</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Width:</span>
+                <span className="ml-2 font-medium text-gray-900">{pkg.width || 'Not provided'} cm</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Height:</span>
+                <span className="ml-2 font-medium text-gray-900">{pkg.height || 'Not provided'} cm</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Service:</span>
+                <span className="ml-2 font-medium text-gray-900">{serviceTypes.find(s => s.id === pkg.serviceType)?.name}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Insurance:</span>
+                <span className="ml-2 font-medium text-gray-900">{pkg.insurance ? 'Yes (+€5.99)' : 'No'}</span>
+              </div>
+              {pkg.needsPallet && (
+                <div>
+                  <span className="text-gray-600">Pallet:</span>
+                  <span className="ml-2 font-medium text-gray-900">{pkg.palletSize === '100x50' ? '100cm × 50cm' : '140cm × 80cm'}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Payment Information */}
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="flex items-start">
+        <CreditCard className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+        <div>
+          <h4 className="font-medium text-blue-900">Payment Method</h4>
+          <p className="text-sm text-blue-700 mt-1">
+            Monthly billing via bank transfer. Invoice will be sent to your registered email address.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+)
 
   const steps = [
-    { number: 1, title: 'Sender Info', icon: User },
+    { number: 1, title: 'Sender Info', icon: SenderIcon },
     { number: 2, title: 'Recipient Info', icon: MapPin },
     { number: 3, title: 'Package & Service', icon: Package },
-    { number: 4, title: 'Review & Pay', icon: CreditCard }
+    { number: 4, title: 'Review', icon: CreditCard }
   ]
 
   return (
@@ -463,36 +740,41 @@ export default function ShipPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-8 relative">
+          {/* Progress Bar: blue bar ends at the center of the current step's icon */}
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-0 h-2 w-full">
+            {/* Gray bar (full width) */}
+            <div className="absolute left-0 top-0 h-2 w-full bg-gray-300 rounded-full"></div>
+            {/* Blue bar (width depends on step) */}
+            <div
+              className="absolute left-0 top-0 h-2 bg-blue-600 rounded-full transition-all duration-300"
+              style={{
+                width:
+                  step === 1 ? '12.5%' :
+                  step === 2 ? '37.5%' :
+                  step === 3 ? '62.5%' :
+                  '100%'
+              }}
+            ></div>
+          </div>
+          {/* 四等分ICON+文字 */}
+          <div className="grid grid-cols-4 relative z-10">
             {steps.map((stepItem, index) => (
-              <div key={stepItem.number} className="flex items-center">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                  step >= stepItem.number 
-                    ? 'bg-blue-600 border-blue-600 text-white' 
+              <div key={stepItem.number} className="flex flex-col items-center">
+                <div className={`flex items-center justify-center w-14 h-14 rounded-full border-2 text-2xl mb-2 ${
+                  step >= stepItem.number
+                    ? 'bg-blue-600 border-blue-600 text-white'
                     : 'bg-white border-gray-300 text-gray-500'
                 }`}>
-                  {step > stepItem.number ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <stepItem.icon className="h-5 w-5" />
-                  )}
+                  <stepItem.icon className="h-8 w-8" />
                 </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-2 ${
-                    step > stepItem.number ? 'bg-blue-600' : 'bg-gray-300'
-                  }`} />
-                )}
+                <span className={`text-center font-bold ${step >= stepItem.number ? 'text-blue-700' : 'text-gray-500'} text-base`}>
+                  {index === 0 && (<><span>Sender</span><br/><span>Info</span></>)}
+                  {index === 1 && (<><span>Recipient</span><br/><span>Info</span></>)}
+                  {index === 2 && (<><span>Package &</span><br/><span>Service</span></>)}
+                  {index === 3 && (<span>Review</span>)}
+                </span>
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-2">
-            {steps.map((stepItem) => (
-              <span key={stepItem.number} className={`text-xs ${
-                step >= stepItem.number ? 'text-blue-600 font-medium' : 'text-gray-500'
-              }`}>
-                {stepItem.title}
-              </span>
             ))}
           </div>
         </div>
@@ -525,7 +807,9 @@ export default function ShipPage() {
             </div>
           </form>
         </div>
+
+
       </main>
     </div>
   )
-} 
+}

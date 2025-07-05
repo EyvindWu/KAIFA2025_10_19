@@ -51,4 +51,34 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 只为表单输入框设置深色字体 */
+input[type="text"], 
+input[type="email"], 
+input[type="tel"], 
+input[type="number"], 
+input[type="password"],
+textarea,
+select {
+  color: #1a202c !important;
+  background-color: #fff !important;
+}
+
+@keyframes slide-in-down {
+  0% { opacity: 0; transform: translateY(-24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in-down {
+  animation: slide-in-down 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 } 
