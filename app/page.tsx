@@ -18,9 +18,9 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from './utils/translations'
-import { orderList } from './track/history/page'
-import { personInfoMap } from './track/detail/[trackingNo]/page'
-import { buildTimeline } from './track/detail/[trackingNo]/page'
+import { orderList } from './track/history/orderList'
+import { personInfoMap } from './track/detail/[trackingNo]/utils'
+import { buildTimeline } from './track/detail/[trackingNo]/utils'
 
 // Tab按钮统一样式
 const tabBtnClass = 'flex-1 w-1/4 px-6 py-2 font-semibold border-b-2 transition-colors text-center flex items-center justify-center gap-1 text-base h-12'

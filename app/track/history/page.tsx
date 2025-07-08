@@ -95,7 +95,6 @@ const statusOptions = [
   { value: 'Cancelled', label: 'Cancelled', color: 'bg-gray-300 text-gray-600' },
 ];
 
-export { orderList };
 export default function OrderHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
