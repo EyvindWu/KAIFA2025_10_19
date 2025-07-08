@@ -25,7 +25,7 @@ export default function RootLayout({
         <ClientProviders>
           <AuthProvider>
             <LanguageProvider>
-              <div className="min-h-screen bg-gray-50">
+              <div className="min-h-screen bg-[#f6f8fa]">
                 <Header />
                 <main>
                   {children}

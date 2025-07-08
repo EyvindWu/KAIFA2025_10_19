@@ -11,7 +11,8 @@ import {
   CheckCircle,
   AlertCircle,
   MapPin,
-  Plus
+  Plus,
+  ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -116,9 +117,12 @@ export default function UserDashboard() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
+          <div className="py-6 flex items-center">
+            <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
+              <ArrowLeft className="h-5 w-5 mr-1" />
+              Back to Home
+            </Link>
             <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
-            <p className="text-gray-600">Here's an overview of your shipments and orders.</p>
           </div>
         </div>
       </div>

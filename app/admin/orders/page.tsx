@@ -229,6 +229,14 @@ export default function AdminOrders() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
+                      {order.status === 'Pending Pickup' && (
+                        <button
+                          className="text-yellow-600 hover:text-yellow-900 p-1 border border-yellow-400 rounded"
+                          title="Remind Pickup"
+                        >
+                          Remind
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

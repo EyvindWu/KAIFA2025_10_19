@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Clock, Share2, X } from 'lucide-react';
+import { Clock, Share2, X, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useTranslation } from '../../../utils/translations';
+import Link from 'next/link';
 // import orderHistoryList from '../../history/orderList';
 
 // 统一sender/recipient类型，兼容mock和自动生成
@@ -206,6 +207,7 @@ function buildTimeline(status: string): any[] {
   }
 }
 
+export { personInfoMap, buildTimeline };
 export default function TrackOrderDetail() {
   const params = useParams();
   const trackingNo = params?.trackingNo as string;
@@ -270,6 +272,10 @@ export default function TrackOrderDetail() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-6">
       <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 md:p-8 w-full max-w-xl md:max-w-2xl relative">
+        <Link href="/track/history" className="flex items-center text-blue-600 hover:underline mb-4">
+          <ArrowLeft className="h-5 w-5 mr-1" />
+          Back to Order History
+        </Link>
         <h1 className="text-2xl font-bold mb-3 text-center text-gray-800">{t('orderDetail')}</h1>
         <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4">
           <div className="flex-1 min-w-0">
@@ -284,6 +290,8 @@ export default function TrackOrderDetail() {
                   ? 'bg-green-100 text-green-700'
                   : order.status === 'In Transit'
                   ? 'bg-blue-100 text-blue-700'
+                  : order.status === 'Pending Pickup'
+                  ? 'bg-yellow-100 text-yellow-700'
                   : order.status === 'Exception'
                   ? 'bg-red-100 text-red-700'
                   : 'bg-gray-100 text-gray-700')

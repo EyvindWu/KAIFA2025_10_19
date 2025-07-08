@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 
 const orderList = [
   {
@@ -95,6 +95,7 @@ const statusOptions = [
   { value: 'Cancelled', label: 'Cancelled', color: 'bg-gray-300 text-gray-600' },
 ];
 
+export { orderList };
 export default function OrderHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -167,6 +168,10 @@ export default function OrderHistory() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10">
       <div className="bg-white rounded-lg shadow-md p-4 md:p-6 w-full max-w-2xl">
+        <Link href="/track" className="flex items-center text-blue-600 hover:underline mb-4">
+          <ArrowLeft className="h-5 w-5 mr-1" />
+          Back to Track
+        </Link>
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Shipment History</h1>
         <div className="flex flex-col gap-2 md:gap-3 mb-4">
           <button

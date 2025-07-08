@@ -62,6 +62,11 @@ export default function ShipPage() {
   })
   const [activePackageIdx, setActivePackageIdx] = useState(0)
   const [useDefaultSender, setUseDefaultSender] = useState(false)
+  const [useAddressBook, setUseAddressBook] = useState(false)
+  const [useSenderAddressBook, setUseSenderAddressBook] = useState(false)
+  const [senderAddressBookInput, setSenderAddressBookInput] = useState('')
+  const [showSenderContactDropdown, setShowSenderContactDropdown] = useState(false)
+  const senderContactInputRef = useRef<HTMLInputElement>(null)
 
   const contactList = [
     { key: 'alice', label: 'Alice (Berlin)' },
@@ -136,7 +141,8 @@ export default function ShipPage() {
   // 3. Recipient Info顶部添加KF代码和通讯录
   const addressBookData: { [key: string]: { recipientName: string; recipientEmail: string; recipientPhone: string; recipientAddress: string; recipientCity: string; recipientPostalCode: string; recipientCountry: string } } = {
     alice: { recipientName: 'Alice', recipientEmail: 'alice@email.com', recipientPhone: '+49 111111', recipientAddress: 'Alice St 2', recipientCity: 'Berlin', recipientPostalCode: '10115', recipientCountry: 'Germany' },
-    bob: { recipientName: 'Bob', recipientEmail: 'bob@email.com', recipientPhone: '+49 222222', recipientAddress: 'Bob Ave 3', recipientCity: 'Munich', recipientPostalCode: '80331', recipientCountry: 'Germany' }
+    bob: { recipientName: 'Bob', recipientEmail: 'bob@email.com', recipientPhone: '+49 222222', recipientAddress: 'Bob Ave 3', recipientCity: 'Munich', recipientPostalCode: '80331', recipientCountry: 'Germany' },
+    charlie: { recipientName: 'Charlie', recipientEmail: 'charlie@email.com', recipientPhone: '+33 333333', recipientAddress: 'Charlie Rd 5', recipientCity: 'Paris', recipientPostalCode: '75001', recipientCountry: 'France' }
   }
 
   const handleContactSelect = (key: string) => {
@@ -148,37 +154,97 @@ export default function ShipPage() {
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Sender Information</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Sender Information</h2>
+      </div>
       
       {/* 地址簿选择 */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">选择发件人地址簿</label>
-        <select
-          value={selectedSenderIndex}
-          onChange={(e) => {
-            const index = parseInt(e.target.value);
-            setSelectedSenderIndex(index);
-            if (index >= 0) {
-              const sender = senderAddressBook[index];
-              setFormData(prev => ({
-                ...prev,
-                senderName: sender.name,
-                senderEmail: sender.email,
-                senderPhone: sender.phone,
-                senderAddress: sender.address,
-                senderCity: sender.city,
-                senderPostalCode: sender.postalCode,
-                senderCountry: sender.country
-              }));
-            }
-          }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value={-1}>请选择发件人</option>
-          {senderAddressBook.map((sender, index) => (
-            <option key={index} value={index}>{sender.name}</option>
-          ))}
-        </select>
+      <div className="mb-4 flex gap-4 items-center">
+        <div className="relative w-full flex items-center gap-2">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <AddressBookIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              ref={senderContactInputRef}
+              type="text"
+              placeholder="Search sender"
+              value={senderAddressBookInput}
+              onFocus={() => setShowSenderContactDropdown(true)}
+              onBlur={() => setTimeout(() => setShowSenderContactDropdown(false), 150)}
+              onChange={e => {
+                const value = e.target.value;
+                setSenderAddressBookInput(value);
+                const sender = senderAddressBook.find(s => s.name === value);
+                if (sender) {
+                  setFormData(prev => ({
+                    ...prev,
+                    senderName: sender.name,
+                    senderEmail: sender.email,
+                    senderPhone: sender.phone,
+                    senderAddress: sender.address,
+                    senderCity: sender.city,
+                    senderPostalCode: sender.postalCode,
+                    senderCountry: sender.country
+                  }));
+                  setUseSenderAddressBook(true);
+                } else {
+                  setUseSenderAddressBook(false);
+                }
+              }}
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {showSenderContactDropdown && (
+              <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg">
+                {senderAddressBook.map((sender, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
+                    onMouseDown={() => {
+                      setSenderAddressBookInput(sender.name);
+                      setFormData(prev => ({
+                        ...prev,
+                        senderName: sender.name,
+                        senderEmail: sender.email,
+                        senderPhone: sender.phone,
+                        senderAddress: sender.address,
+                        senderCity: sender.city,
+                        senderPostalCode: sender.postalCode,
+                        senderCountry: sender.country
+                      }));
+                      setUseSenderAddressBook(true);
+                    }}
+                  >
+                    {sender.name} ({sender.city})
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <label className="flex items-center ml-2 select-none">
+            <button
+              type="button"
+              className={`text-sm border rounded px-3 py-1 ml-2 ${useSenderAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
+              disabled={!useSenderAddressBook}
+              onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  senderName: '',
+                  senderEmail: '',
+                  senderPhone: '',
+                  senderAddress: '',
+                  senderCity: '',
+                  senderPostalCode: '',
+                  senderCountry: ''
+                }));
+                setSenderAddressBookInput('');
+                setUseSenderAddressBook(false);
+              }}
+            >
+              Clear
+            </button>
+          </label>
+        </div>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div>
@@ -256,7 +322,7 @@ export default function ShipPage() {
               onChange={e => setSaveToAddressBook(e.target.checked)}
               className="h-4 w-4 text-blue-600"
             />
-            <span className="ml-2 text-sm text-black">保存至地址簿</span>
+            <span className="ml-2 text-sm text-black">Save to address book</span>
           </label>
         </div>
       </div>
@@ -265,42 +331,75 @@ export default function ShipPage() {
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Recipient Information</h2>
-      <div className="mb-2 flex gap-4 relative">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Recipient Information</h2>
+      </div>
+      <div className="mb-2 flex gap-4 relative items-center">
         <input type="text" placeholder="Enter KF Code" value={formData.kfCode} onChange={e => setFormData(prev => ({ ...prev, kfCode: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-md" />
-        <div className="flex-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <AddressBookIcon className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            ref={contactInputRef}
-            type="text"
-            placeholder="查找收件人"
-            value={formData.addressBook}
-            onFocus={() => setShowContactDropdown(true)}
-            onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
-            onChange={e => {
-              const value = e.target.value;
-              setFormData(prev => ({ ...prev, addressBook: value }));
-              if (addressBookData[value]) {
-                setFormData(prev => ({ ...prev, ...addressBookData[value] }));
-              }
-            }}
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {showContactDropdown && (
-            <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg">
-              {contactList.map(contact => (
-                <div
-                  key={contact.key}
-                  className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
-                  onMouseDown={() => handleContactSelect(contact.key)}
-                >
-                  {contact.label}
-                </div>
-              ))}
+        <div className="flex-1 relative flex items-center gap-2">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <AddressBookIcon className="h-5 w-5 text-gray-400" />
             </div>
-          )}
+            <input
+              ref={contactInputRef}
+              type="text"
+              placeholder="Search recipient"
+              value={formData.addressBook}
+              onFocus={() => setShowContactDropdown(true)}
+              onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
+              onChange={e => {
+                const value = e.target.value;
+                setFormData(prev => ({ ...prev, addressBook: value }));
+                if (addressBookData[value]) {
+                  setFormData(prev => ({ ...prev, ...addressBookData[value] }));
+                  setUseAddressBook(true);
+                } else {
+                  setUseAddressBook(false);
+                }
+              }}
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {showContactDropdown && (
+              <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg">
+                {contactList.map(contact => (
+                  <div
+                    key={contact.key}
+                    className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
+                    onMouseDown={() => {
+                      handleContactSelect(contact.key);
+                      setUseAddressBook(true);
+                    }}
+                  >
+                    {contact.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <label className="flex items-center ml-2 select-none">
+            <button
+              type="button"
+              className={`text-sm border rounded px-3 py-1 ml-2 ${useAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
+              disabled={!useAddressBook}
+              onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  recipientName: '',
+                  recipientEmail: '',
+                  recipientPhone: '',
+                  recipientAddress: '',
+                  recipientCity: '',
+                  recipientPostalCode: '',
+                  recipientCountry: '',
+                  addressBook: ''
+                }));
+                setUseAddressBook(false);
+              }}
+            >
+              Clear
+            </button>
+          </label>
         </div>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
@@ -368,14 +467,25 @@ export default function ShipPage() {
           />
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
-          <input
-            type="text"
-            value={formData.recipientPostalCode}
-            onChange={(e) => handleInputChange('recipientPostalCode', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+            <input
+              type="text"
+              value={formData.recipientPostalCode}
+              onChange={(e) => handleInputChange('recipientPostalCode', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <label className="flex items-center ml-2 mt-6">
+            <input
+              type="checkbox"
+              checked={saveToAddressBook}
+              onChange={e => setSaveToAddressBook(e.target.checked)}
+              className="h-4 w-4 text-blue-600"
+            />
+            <span className="ml-2 text-sm text-black">Save to address book</span>
+          </label>
         </div>
       </div>
     </div>
@@ -433,26 +543,28 @@ export default function ShipPage() {
                     setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, weight: v } : p) }))
                   }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Length (cm)</label>
-                  <input type="text" value={pkg.length} onChange={e => {
-                    const v = e.target.value
-                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, length: v } : p) }))
-                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
-                  <input type="text" value={pkg.width} onChange={e => {
-                    const v = e.target.value
-                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, width: v } : p) }))
-                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-                  <input type="text" value={pkg.height} onChange={e => {
-                    const v = e.target.value
-                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, height: v } : p) }))
-                  }} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                <div className="flex gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Length (cm)</label>
+                    <input type="text" value={pkg.length} onChange={e => {
+                      const v = e.target.value
+                      setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, length: v } : p) }))
+                    }} className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
+                    <input type="text" value={pkg.width} onChange={e => {
+                      const v = e.target.value
+                      setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, width: v } : p) }))
+                    }} className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                    <input type="text" value={pkg.height} onChange={e => {
+                      const v = e.target.value
+                      setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, height: v } : p) }))
+                    }} className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -494,7 +606,7 @@ export default function ShipPage() {
                   
                   {/* 板架选项 */}
                   <div className="border-t pt-4">
-                    <div className="mb-3 font-medium text-gray-700">需要板架？<span className="text-red-500 ml-1">*</span></div>
+                    <div className="mb-3 font-medium text-gray-700">Need pallet?<span className="text-red-500 ml-1">*</span></div>
                     <div className="flex gap-6 mb-2">
                       <label className="flex items-center">
                         <input type="radio" name={`needsPallet${idx}`} value="yes" checked={pkg.needsPallet === true} onChange={() => {
@@ -511,7 +623,7 @@ export default function ShipPage() {
                     </div>
                     {pkg.needsPallet === true && (
                       <div className="ml-6 space-y-2">
-                        <div className="mb-1 text-sm text-gray-700">请选择板架尺寸 <span className="text-red-500">*</span></div>
+                        <div className="mb-1 text-sm text-gray-700">Please select pallet size <span className="text-red-500">*</span></div>
                         <label className="flex items-center">
                           <input type="radio" name={`palletSize${idx}`} value="100x50" checked={pkg.palletSize === '100x50'} onChange={e => {
                             const v = e.target.value
@@ -535,15 +647,17 @@ export default function ShipPage() {
           )}
         </div>
       ))}
-      <div className="flex items-center justify-center mt-6">
-        <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
-          setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false }] }))
-          setActivePackageIdx(formData.packages.length)
-        }}>
-          <span className="text-2xl mr-2">+</span>
-          <span className="font-medium text-base">Add Package {formData.packages.length + 1}</span>
-        </button>
-      </div>
+      {formData.packages.length < 5 && (
+        <div className="flex items-center justify-center mt-6">
+          <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
+            setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false }] }))
+            setActivePackageIdx(formData.packages.length)
+          }}>
+            <span className="text-2xl mr-2">+</span>
+            <span className="font-medium text-base">Add Package {formData.packages.length + 1}</span>
+          </button>
+        </div>
+      )}
       <div className="mt-8 flex items-start bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <input
           type="checkbox"
@@ -552,8 +666,8 @@ export default function ShipPage() {
           className="h-5 w-5 mt-0.5 mr-3"
         />
         <div className="text-sm text-yellow-900">
-          <span className="font-bold">延时取货</span><br />
-          快发快递支持下午16:00后上门取货，以确保发货进度，请尽快准备好包裹并粘贴信息，我们会与您联系。
+          <span className="font-bold">Delayed pickup</span><br />
+          FastExpress supports pickup after 16:00 for same-day orders. To ensure timely shipping, please prepare your package and label in advance. We will contact you.
         </div>
       </div>
     </div>
