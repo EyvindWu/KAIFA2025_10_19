@@ -342,7 +342,7 @@ export const translations = {
     systemLogs: '系统日志',
     orders: '订单',
     customers: '客户',
-    shipments: '运单',
+    shipments: '条运单',
     billing: '账单',
     reports: '报告',
     save: '保存',
