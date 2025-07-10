@@ -89,7 +89,6 @@ export const translations = {
     systemLogs: 'System Logs',
     orders: 'Orders',
     customers: 'Customers',
-    shipments: 'Shipments',
     billing: 'Billing',
     reports: 'Reports',
     save: 'Save',
