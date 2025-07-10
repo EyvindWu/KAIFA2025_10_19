@@ -32,13 +32,10 @@ export default function SystemSettings() {
   const handleSaveSettings = async () => {
     setIsSaving(true)
     setSaveStatus('idle')
-    
     // 模拟保存操作
     await new Promise(resolve => setTimeout(resolve, 2000))
-    
     setIsSaving(false)
     setSaveStatus('success')
-    
     setTimeout(() => setSaveStatus('idle'), 3000)
   }
 
@@ -63,7 +60,6 @@ export default function SystemSettings() {
           {isSaving ? t('saving') : t('saveSettings')}
         </button>
       </div>
-
       {/* Status Messages */}
       {saveStatus === 'success' && (
         <div className="bg-green-50 border border-green-200 rounded-md p-4">
@@ -75,7 +71,6 @@ export default function SystemSettings() {
           </div>
         </div>
       )}
-
       {/* System Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
@@ -87,7 +82,6 @@ export default function SystemSettings() {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <Activity className="h-8 w-8 text-green-600" />
@@ -97,7 +91,6 @@ export default function SystemSettings() {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <Database className="h-8 w-8 text-purple-600" />
@@ -108,7 +101,6 @@ export default function SystemSettings() {
           </div>
         </div>
       </div>
-
       {/* Settings Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* General Settings */}
@@ -144,7 +136,6 @@ export default function SystemSettings() {
             </div>
           </div>
         </div>
-
         {/* Security Settings */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -179,7 +170,6 @@ export default function SystemSettings() {
             </div>
           </div>
         </div>
-
         {/* Database Settings */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -209,7 +199,6 @@ export default function SystemSettings() {
             </button>
           </div>
         </div>
-
         {/* System Maintenance */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">

@@ -126,6 +126,50 @@ const orderList = [
   { id: '1Z999AA10123456783', status: 'Cancelled', summary: 'Andy Liu → Lily, 2.0kg, Standard', href: '/track/detail', recipient: 'Lily', createdAt: '2024-05-01' },
 ];
 
+// 订单状态和服务类型英文→key映射表
+const statusKeyMap: { [key: string]: string } = {
+  "Pending Pickup": "pendingPickup",
+  "In Transit": "inTransit",
+  "Picked Up": "pickedUp",
+  "Delivered": "delivered",
+  "Cancelled": "cancelled",
+  "Exception": "exception",
+};
+const serviceTypeKeyMap: { [key: string]: string } = {
+  "Standard": "standardDelivery",
+  "Express": "expressDelivery",
+  "Next Day Air": "nextDayAir",
+};
+const yesNoKeyMap: { [key: string]: string } = {
+  "Yes": "yes",
+  "No": "no",
+};
+
+// 时间线状态和描述英文→key映射表
+const timelineStatusKeyMap: { [key: string]: string } = {
+  "Pending Pickup": "pendingPickup",
+  "In Transit": "inTransit",
+  "Picked Up": "pickedUp",
+  "Delivered": "delivered",
+  "Out for Delivery": "outForDelivery",
+  "Exception": "exception",
+  "Cancelled": "cancelled",
+  "Label Created": "labelCreated",
+  "Order Placed": "orderPlaced",
+};
+const timelineDescKeyMap: { [key: string]: string } = {
+  "Departed from facility": "departedFromFacility",
+  "Package picked up by carrier": "packagePickedUpByCarrier",
+  "Shipping label created": "shippingLabelCreated",
+  "Package delivered to recipient": "packageDeliveredToRecipient",
+  "Package delivered to recipient.": "packageDeliveredToRecipient",
+  "Order has been placed and is awaiting processing.": "orderPlacedDesc",
+  "Order is ready for pickup by the carrier.": "readyForPickup",
+  "Package is in transit to destination.": "inTransitToDestination",
+  "Package is out for delivery to recipient.": "outForDelivery",
+};
+timelineDescKeyMap["Package picked up by carrier."] = "packagePickedUpByCarrier";
+
 export default function TrackOrderDetail() {
   const params = useParams();
   const trackingNo = params?.trackingNo as string;
@@ -192,12 +236,12 @@ export default function TrackOrderDetail() {
       <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 md:p-8 w-full max-w-xl md:max-w-2xl relative">
         <Link href="/track/history" className="flex items-center text-blue-600 hover:underline mb-4">
           <ArrowLeft className="h-5 w-5 mr-1" />
-          Back to Order History
+          {t('backToOrderHistory')}
         </Link>
-        <h1 className="text-2xl font-bold mb-3 text-center text-gray-800">{t('orderDetail')}</h1>
+        {/* 删除最上方的“订单详情”标题 */}
         <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4">
           <div className="flex-1 min-w-0">
-            <div className="text-gray-500 text-sm">{t('trackingNumber')}</div>
+            <div className="text-gray-500 text-sm">{t('orderNumber')}</div>
             <div className="font-mono text-lg font-bold text-gray-900 truncate">{order.trackingNumber}</div>
           </div>
           <div className="flex-shrink-0 mt-2 md:mt-0">
@@ -215,7 +259,7 @@ export default function TrackOrderDetail() {
                   : 'bg-gray-100 text-gray-700')
               }
             >
-              {order.status}
+              {t(statusKeyMap[order.status] || order.status)}
             </span>
           </div>
         </div>
@@ -223,22 +267,22 @@ export default function TrackOrderDetail() {
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="font-bold text-gray-700 mb-1">{t('sender')}</div>
             <div className="text-sm text-gray-800">{order.sender.name}</div>
-            <div className="text-xs text-gray-500">Email: {order.sender.email}</div>
-            <div className="text-xs text-gray-500">Phone: {order.sender.phone}</div>
-            <div className="text-xs text-gray-500">Address: {order.sender.address}</div>
-            <div className="text-xs text-gray-500">City: {order.sender.city}</div>
-            <div className="text-xs text-gray-500">Postal Code: {order.sender.postalCode}</div>
-            <div className="text-xs text-gray-500">Country: {order.sender.country}</div>
+            <div className="text-xs text-gray-500">{t('email')}: {order.sender.email}</div>
+            <div className="text-xs text-gray-500">{t('phone')}: {order.sender.phone}</div>
+            <div className="text-xs text-gray-500">{t('address')}: {order.sender.address}</div>
+            <div className="text-xs text-gray-500">{t('city')}: {order.sender.city}</div>
+            <div className="text-xs text-gray-500">{t('postalCode')}: {order.sender.postalCode}</div>
+            <div className="text-xs text-gray-500">{t('country')}: {t(order.sender.country.toLowerCase())}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="font-bold text-gray-700 mb-1">{t('recipient')}</div>
             <div className="text-sm text-gray-800">{order.recipient.name}</div>
-            <div className="text-xs text-gray-500">Email: {order.recipient.email}</div>
-            <div className="text-xs text-gray-500">Phone: {order.recipient.phone}</div>
-            <div className="text-xs text-gray-500">Address: {order.recipient.address}</div>
-            <div className="text-xs text-gray-500">City: {order.recipient.city}</div>
-            <div className="text-xs text-gray-500">Postal Code: {order.recipient.postalCode}</div>
-            <div className="text-xs text-gray-500">Country: {order.recipient.country}</div>
+            <div className="text-xs text-gray-500">{t('email')}: {order.recipient.email}</div>
+            <div className="text-xs text-gray-500">{t('phone')}: {order.recipient.phone}</div>
+            <div className="text-xs text-gray-500">{t('address')}: {order.recipient.address}</div>
+            <div className="text-xs text-gray-500">{t('city')}: {order.recipient.city}</div>
+            <div className="text-xs text-gray-500">{t('postalCode')}: {order.recipient.postalCode}</div>
+            <div className="text-xs text-gray-500">{t('country')}: {t(order.recipient.country.toLowerCase())}</div>
           </div>
         </div>
         <div className="mb-6">
@@ -246,7 +290,7 @@ export default function TrackOrderDetail() {
             <div className="flex items-center">
               <span className="block w-1.5 h-6 bg-blue-600 rounded mr-2"></span>
               <Clock className="h-5 w-5 text-blue-600 mr-2" />
-              <span className="font-bold text-2xl text-blue-700">{t('trackingTimeline')}</span>
+              <span className="font-bold text-2xl text-blue-700">{t('orderDetails')}</span>
             </div>
             <button
               className="flex items-center px-3 py-1 border-2 border-teal-400 text-teal-700 bg-teal-50 rounded-full text-sm share-btn hover:bg-teal-100 focus:outline-none transition-colors"
@@ -290,9 +334,9 @@ export default function TrackOrderDetail() {
               {order.timeline.map((item, idx) => (
                 <div key={idx} className="mb-8 relative">
                   <div className="absolute -left-5 top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white"></div>
-                  <div className="text-lg text-gray-700 font-bold">{item.status}</div>
+                  <div className="text-sm text-gray-700 font-semibold">{t(timelineStatusKeyMap[item.status] || item.status)}</div>
                   <div className="text-base text-gray-500">{item.time} — {item.location}</div>
-                  <div className="text-base text-gray-400">{item.desc}</div>
+                  <div className="text-xs text-gray-400">{t(timelineDescKeyMap[item.desc] || item.desc)}</div>
                 </div>
               ))}
             </div>
@@ -301,15 +345,23 @@ export default function TrackOrderDetail() {
         <div className="mb-6 bg-gray-50 rounded-lg p-4">
                       <div className="font-bold text-gray-700 mb-2">{t('packageInformation')}</div>
                       <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs">
-              <div><span className="text-gray-500">{t('packageType')}:</span> <span className="text-gray-800">{order.package.packageType}</span></div>
+              <div><span className="text-gray-500">{t('packageType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[order.package.packageType] || order.package.packageType)}</span></div>
               <div><span className="text-gray-500">{t('weight')}:</span> <span className="text-gray-800">{order.package.weight}</span></div>
               <div><span className="text-gray-500">{t('length')}:</span> <span className="text-gray-800">{order.package.length}</span></div>
               <div><span className="text-gray-500">{t('width')}:</span> <span className="text-gray-800">{order.package.width}</span></div>
               <div><span className="text-gray-500">{t('height')}:</span> <span className="text-gray-800">{order.package.height}</span></div>
-              <div><span className="text-gray-500">{t('description')}:</span> <span className="text-gray-800">{order.package.description}</span></div>
-              <div><span className="text-gray-500">{t('serviceType')}:</span> <span className="text-gray-800">{order.package.serviceType}</span></div>
-              <div><span className="text-gray-500">{t('insurance')}:</span> <span className="text-gray-800">{order.package.insurance}</span></div>
-              <div><span className="text-gray-500">{t('needsPallet')}:</span> <span className="text-gray-800">{order.package.needsPallet}</span></div>
+              <div><span className="text-gray-500">{t('description')}:</span> <span className="text-gray-800">{(() => {
+  // 例："Andy Liu → Noah, 2.8kg, Express"
+  const parts = order.package.description.split(',');
+  if (parts.length === 3) {
+    const [names, weight, service] = parts;
+    return `${names},${weight},${t(serviceTypeKeyMap[service.trim()] || service.trim())}`;
+  }
+  return order.package.description;
+})()}</span></div>
+              <div><span className="text-gray-500">{t('serviceType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[order.package.serviceType] || order.package.serviceType)}</span></div>
+              <div><span className="text-gray-500">{t('insurance')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[order.package.insurance.split(' ')[0].replace(/\W+$/, '').toLowerCase().replace(/^./, (s: string) => s.toUpperCase())] || order.package.insurance)}</span></div>
+              <div><span className="text-gray-500">{t('needsPallet')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[order.package.needsPallet] || order.package.needsPallet)}</span></div>
                 <div><span className="text-gray-500">{t('palletSize')}:</span> <span className="text-gray-800">{order.package.palletSize}</span></div>
               <div><span className="text-gray-500">{t('trackingUrl')}:</span> <a href={order.package.trackingUrl} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">{t('viewLogistics')}</a></div>
             </div>

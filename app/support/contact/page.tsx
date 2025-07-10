@@ -1,10 +1,13 @@
+'use client'
 import React from 'react';
 import { FaWhatsapp, FaWeixin, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { useTranslation } from '../../utils/translations';
 
 export default function ContactCustomerService() {
+  const { t } = useTranslation();
   return (
     <div className="max-w-xl mx-auto p-8 bg-white rounded shadow mt-8">
-      <h1 className="text-2xl font-bold mb-4 text-black">Contact Customer Service</h1>
+      <h1 className="text-2xl font-bold mb-4 text-black">{t('contactCustomerService')}</h1>
       <div className="space-y-4 mb-6">
         <div className="flex items-center gap-2">
           <FaWhatsapp className="text-green-500 w-5 h-5" />
@@ -24,12 +27,12 @@ export default function ContactCustomerService() {
         </div>
       </div>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2 text-black">How can we help you?</h2>
+        <h2 className="text-lg font-semibold mb-2 text-black">{t('howCanWeHelp')}</h2>
         <ul className="list-disc pl-6 text-black space-y-1">
-          <li>Order status and tracking inquiries</li>
-          <li>Shipping and delivery questions</li>
-          <li>Account and billing support</li>
-          <li>Feedback and suggestions</li>
+          <li>{t('orderStatusAndTracking')}</li>
+          <li>{t('shippingAndDelivery')}</li>
+          <li>{t('accountAndBilling')}</li>
+          <li>{t('feedbackAndSuggestions')}</li>
         </ul>
       </div>
     </div>

@@ -12,13 +12,16 @@ import {
   AlertCircle,
   MapPin,
   Plus,
-  ArrowLeft
+  ArrowLeft,
+  Bell
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslation } from '../utils/translations';
 
 export default function UserDashboard() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading } = useAuth()
+  const { t } = useTranslation();
 
   // 检查权限
   useEffect(() => {
@@ -33,32 +36,12 @@ export default function UserDashboard() {
     }
   }, [isAuthenticated, user, isLoading, router])
 
-  // 模拟用户数据
+  // 统计卡片多语言
   const userStats = [
-    {
-      name: 'Total Orders',
-      value: '23',
-      icon: Package,
-      color: 'blue'
-    },
-    {
-      name: 'In Transit',
-      value: '5',
-      icon: Truck,
-      color: 'yellow'
-    },
-    {
-      name: 'Delivered',
-      value: '18',
-      icon: CheckCircle,
-      color: 'green'
-    },
-    {
-      name: 'Total Spent',
-      value: '€1,234',
-      icon: Euro,
-      color: 'purple'
-    }
+    { name: t('totalOrders'), value: '23', icon: Package, color: 'blue' },
+    { name: t('inTransit'), value: '5', icon: Truck, color: 'yellow' },
+    { name: t('delivered'), value: '18', icon: CheckCircle, color: 'green' },
+    { name: t('totalSpent'), value: '€1,234', icon: Euro, color: 'purple' }
   ]
 
   const recentOrders = [
@@ -100,6 +83,24 @@ export default function UserDashboard() {
     }
   }
 
+  // 服务类型英文→key映射表
+  const serviceTypeKeyMap: { [key: string]: string } = {
+    "Standard": "standardDelivery",
+    "Express": "expressDelivery",
+  };
+
+  // 新增提醒功能
+  const handleRemind = (order: { id: string; summary: string }) => {
+    const reminders = JSON.parse(localStorage.getItem('kaifa-reminders') || '[]');
+    reminders.push({
+      id: order.id,
+      summary: order.summary,
+      time: new Date().toISOString(),
+    });
+    localStorage.setItem('kaifa-reminders', JSON.stringify(reminders));
+    alert(t('remindSent'));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -120,9 +121,9 @@ export default function UserDashboard() {
           <div className="py-6 flex items-center">
             <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
               <ArrowLeft className="h-5 w-5 mr-1" />
-              Back to Home
+              {t('backToHome')}
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('welcomeBack')}, {user.name}!</h1>
           </div>
         </div>
       </div>
@@ -161,7 +162,7 @@ export default function UserDashboard() {
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t('quickActions')}</h3>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -171,8 +172,8 @@ export default function UserDashboard() {
               >
                 <Plus className="h-6 w-6 text-blue-600 mr-3" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">Create Shipment</p>
-                  <p className="text-xs text-gray-500">Send a new package</p>
+                  <p className="text-sm font-medium text-gray-900">{t('createShipment')}</p>
+                  <p className="text-xs text-gray-500">{t('sendNewPackage')}</p>
                 </div>
               </Link>
               <Link
@@ -181,8 +182,8 @@ export default function UserDashboard() {
               >
                 <Truck className="h-6 w-6 text-green-600 mr-3" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">Track Package</p>
-                  <p className="text-xs text-gray-500">Check delivery status</p>
+                  <p className="text-sm font-medium text-gray-900">{t('trackPackage')}</p>
+                  <p className="text-xs text-gray-500">{t('checkDeliveryStatus')}</p>
                 </div>
               </Link>
               <Link
@@ -191,8 +192,8 @@ export default function UserDashboard() {
               >
                 <Euro className="h-6 w-6 text-purple-600 mr-3" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">View Billing</p>
-                  <p className="text-xs text-gray-500">Manage payments</p>
+                  <p className="text-sm font-medium text-gray-900">{t('viewBilling')}</p>
+                  <p className="text-xs text-gray-500">{t('managePayments')}</p>
                 </div>
               </Link>
             </div>
@@ -202,14 +203,14 @@ export default function UserDashboard() {
         {/* Recent Orders */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t('recentOrders')}</h3>
           </div>
           <div className="divide-y divide-gray-200">
             {recentOrders.map((order) => (
-              <div key={order.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
+              <div key={order.id} className="px-6 py-4 relative">
+                <div className="flex flex-col gap-1">
                   <div className="flex items-center">
-                    <div className={`p-2 rounded-full ${getStatusColor(order.status)}`}>
+                    <div className={`p-2 rounded-full ${getStatusColor(order.status)}`}> 
                       {order.status === 'Delivered' ? (
                         <CheckCircle className="h-4 w-4" />
                       ) : order.status === 'In Transit' ? (
@@ -221,22 +222,41 @@ export default function UserDashboard() {
                       )}
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-900">{order.summary}</p>
+                      <p className="text-sm font-medium text-gray-900">{(() => {
+                        const parts = order.summary.split(',');
+                        if (parts.length === 3) {
+                          const [names, weight, service] = parts;
+                          return `${names},${weight},${t(serviceTypeKeyMap[service.trim()] || service.trim())}`;
+                        }
+                        return order.summary;
+                      })()}</p>
                       <p className="text-sm text-gray-500">{order.id}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">€{order.amount}</p>
-                    <p className="text-sm text-gray-500">{order.date}</p>
+                  <span className={`absolute right-6 top-4 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10 rounded`}>{t(order.status === 'Pending Pickup' ? 'pendingPickup' : order.status === 'In Transit' ? 'inTransit' : order.status === 'Delivered' ? 'delivered' : order.status)}</span>
+                  {order.status === 'Pending Pickup' && (
+                    <div className="absolute right-6" style={{top: '3.5rem'}}>
+                      <button
+                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1"
+                        onClick={() => handleRemind(order)}
+                      >
+                        <Bell className="h-4 w-4 mr-1" />
+                        {t('remind')}
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mt-1">
+                    <div className="text-sm text-gray-500">€{order.amount}</div>
+                    <div className="text-sm text-gray-500">{order.date}</div>
                   </div>
-                </div>
-                <div className="mt-2">
-                  <Link
-                    href={`/track/detail/${order.id}`}
-                    className="text-sm text-blue-600 hover:text-blue-500"
-                  >
-                    View Details →
-                  </Link>
+                  <div className="mt-2">
+                    <Link
+                      href={`/track/detail/${order.id}`}
+                      className="text-sm text-blue-600 hover:text-blue-500"
+                    >
+                      {t('viewDetails')} →
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

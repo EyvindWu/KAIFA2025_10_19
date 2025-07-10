@@ -7,38 +7,38 @@ import { Eye, EyeOff, Loader2, Truck, Shield, User, ChevronDown } from 'lucide-r
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from '../utils/translations'
 
-// 预设账号数据
-const savedAccounts = [
-  {
-    id: '1',
-    email: 'admin@kaifa.com',
-    password: 'admin123',
-    name: 'System Administrator',
-    role: 'Super Admin',
-    description: 'System maintenance & configuration',
-    avatar: '👨‍💻'
-  },
-  {
-    id: '2',
-    email: 'manager@kaifa.com',
-    password: 'manager123',
-    name: 'Customer Service Manager',
-    role: 'Admin',
-    description: 'Business operations & customer service',
-    avatar: '👩‍💼'
-  },
-  {
-    id: '3',
-    email: 'user@example.com',
-    password: 'user123',
-    name: 'Andy Liu',
-    role: 'User',
-    description: 'Customer account',
-    avatar: '👤'
-  }
-]
-
 export default function LoginPage() {
+  const { t } = useTranslation();
+  // 账号卡片内描述多语言
+  const savedAccounts = [
+    {
+      id: '1',
+      email: 'admin@kaifa.com',
+      password: 'admin123',
+      name: t('systemAdministrator'),
+      role: 'Super Admin',
+      description: t('systemMaintenance'),
+      avatar: '👨‍💻'
+    },
+    {
+      id: '2',
+      email: 'manager@kaifa.com',
+      password: 'manager123',
+      name: t('customerServiceManager'),
+      role: 'Admin',
+      description: t('businessOperations'),
+      avatar: '👩‍💼'
+    },
+    {
+      id: '3',
+      email: 'user@example.com',
+      password: 'user123',
+      name: t('customerAccount'),
+      role: 'User',
+      description: t('customerAccountDesc'),
+      avatar: '👤'
+    }
+  ];
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -48,14 +48,16 @@ export default function LoginPage() {
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const router = useRouter()
   const { login, isAuthenticated, user } = useAuth()
-  const { t } = useTranslation()
+  
   const emailInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 如果已经登录，根据角色重定向
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'admin' || user.role === 'super_admin') {
+      if (user.email === 'admin@kaifa.com') {
+        router.push('/system_admin/dashboard')
+      } else if (user.email === 'manager@kaifa.com') {
         router.push('/admin/dashboard')
       } else {
         router.push('/dashboard')
@@ -86,8 +88,10 @@ export default function LoginPage() {
       const result = await login(email, password)
       
       if (result.success && result.user) {
-        // 登录成功，根据角色重定向
-        if (result.user.role === 'admin' || result.user.role === 'super_admin') {
+        // 登录成功，根据邮箱精确重定向
+        if (result.user.email === 'admin@kaifa.com') {
+          router.push('/system_admin/dashboard')
+        } else if (result.user.email === 'manager@kaifa.com') {
           router.push('/admin/dashboard')
         } else {
           router.push('/dashboard')
@@ -277,11 +281,11 @@ export default function LoginPage() {
 
           {/* Demo Accounts Info */}
           <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">💡 Quick Login Tips:</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">{t('quickLoginTips')}</h3>
             <div className="space-y-2 text-xs text-gray-600">
-              <div>• Click the email field to see saved accounts</div>
-              <div>• Select any account to auto-fill credentials</div>
-              <div>• Or manually enter: admin@kaifa.com / admin123</div>
+              <div>{t('quickLoginTip1')}</div>
+              <div>{t('quickLoginTip2')}</div>
+              <div>{t('quickLoginTip3')}</div>
             </div>
           </div>
 
@@ -291,7 +295,7 @@ export default function LoginPage() {
               href="/"
               className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
             >
-              ← Back to Home
+              {t('backToHome')}
             </Link>
           </div>
         </div>

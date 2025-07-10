@@ -234,10 +234,10 @@ export default function Header() {
                 }}
               >
                 <Link href="/support/contact" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700" onClick={() => setSupportMenuOpen(false)}>
-                  Contact Customer Service
+                  {t('contactCustomerService')}
                 </Link>
                 <Link href="/support/guide" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700" onClick={() => setSupportMenuOpen(false)}>
-                  Guide
+                  {t('guide')}
                 </Link>
               </div>
             )}
@@ -246,35 +246,33 @@ export default function Header() {
 
         {/* Header右侧菜单 */}
         <div className="flex items-center space-x-2">
-          {/* 桌面端语言选择 - 仅未登录用户显示 */}
-          {!isAuthenticated && (
-            <div className="relative hidden md:block" data-dropdown="language">
-              <button
-                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                className="flex items-center px-2 py-1 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <Globe className="h-4 w-4 mr-1" />
-                <span className="text-sm">{currentLanguage.toUpperCase()}</span>
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </button>
-              {isLanguageDropdownOpen && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  <div className="py-1">
-                    {languages.map((lang: { code: string; name: string; flag: string }) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => handleLanguageChange(lang.code)}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        <span className="mr-2">{lang.flag}</span>
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
+          {/* 桌面端语言选择 - 登录按钮左侧，且仅显示 en/zh/it */}
+          <div className="relative hidden md:block" data-dropdown="language">
+            <button
+              onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+              className="flex items-center px-2 py-1 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <Globe className="h-4 w-4 mr-1" />
+              <span className="text-sm">{currentLanguage.toUpperCase()}</span>
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </button>
+            {isLanguageDropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="py-1">
+                  {(languages.filter((lang: { code: string }) => ['en','zh','it'].includes(lang.code)) as { code: string; name: string; flag: string }[]).map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleLanguageChange(lang.code)}
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.name}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
           
           {/* User Menu */}
           <div className="relative" data-dropdown="user">
@@ -309,7 +307,7 @@ export default function Header() {
                       </div>
                       {user?.role === 'admin' || user?.role === 'super_admin' ? (
                         <Link
-                          href="/admin/dashboard"
+                          href={user?.email === 'admin@kaifa.com' ? '/system_admin/dashboard' : '/admin/dashboard'}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setIsUserDropdownOpen(false)}
                         >
@@ -389,19 +387,15 @@ export default function Header() {
               <Link href="/support/contact" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('support')}</Link>
             </div>
 
-            {/* Language Selector - 移动端显示 */}
+            {/* Language Selector - 移动端显示，仅 en/zh/it */}
             <div className="pb-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-3">{t('language')}</h3>
               <div className="grid grid-cols-2 gap-2">
-                {languages.map((lang: { code: string; name: string; flag: string }) => (
+                {(languages.filter((lang: { code: string }) => ['en','zh','it'].includes(lang.code)) as { code: string; name: string; flag: string }[]).map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`flex items-center px-3 py-2 text-sm rounded transition-colors ${
-                      currentLanguage === lang.code 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center px-3 py-2 text-sm rounded transition-colors ${currentLanguage === lang.code ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-50'}`}
                   >
                     <span className="mr-2">{lang.flag}</span>
                     {lang.name}
@@ -421,7 +415,7 @@ export default function Header() {
                     </div>
                     {user?.role === 'admin' || user?.role === 'super_admin' ? (
                       <Link
-                        href="/admin/dashboard"
+                        href={user?.email === 'admin@kaifa.com' ? '/system_admin/dashboard' : '/admin/dashboard'}
                         className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
                       >
                         {t('adminPanel')}

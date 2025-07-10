@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, Bell } from 'lucide-react';
+import { useTranslation } from '../../utils/translations';
 
 const orderList = [
   {
@@ -95,7 +96,21 @@ const statusOptions = [
   { value: 'Cancelled', label: 'Cancelled', color: 'bg-gray-300 text-gray-600' },
 ];
 
+// 订单状态和服务类型英文→key映射表
+const statusKeyMap: { [key: string]: string } = {
+  "All": "all",
+  "Pending Pickup": "pendingPickup",
+  "In Transit": "inTransit",
+  "Delivered": "delivered",
+  "Cancelled": "cancelled",
+};
+const serviceTypeKeyMap: { [key: string]: string } = {
+  "Standard": "standardDelivery",
+  "Express": "expressDelivery",
+};
+
 export default function OrderHistory() {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateStart, setDateStart] = useState('');
@@ -164,14 +179,26 @@ export default function OrderHistory() {
 
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // 新增提醒功能
+  const handleRemind = (order: { id: string; summary: string }) => {
+    const reminders = JSON.parse(localStorage.getItem('kaifa-reminders') || '[]');
+    reminders.push({
+      id: order.id,
+      summary: order.summary,
+      time: new Date().toISOString(),
+    });
+    localStorage.setItem('kaifa-reminders', JSON.stringify(reminders));
+    alert(t('remindSent'));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10">
       <div className="bg-white rounded-lg shadow-md p-4 md:p-6 w-full max-w-2xl">
         <Link href="/track" className="flex items-center text-blue-600 hover:underline mb-4">
           <ArrowLeft className="h-5 w-5 mr-1" />
-          Back to Track
+          {t('backToTrack')}
         </Link>
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Shipment History</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">{t('shipmentHistory')}</h1>
         <div className="flex flex-col gap-2 md:gap-3 mb-4">
           <button
             className="flex items-center gap-1 px-4 py-2 font-semibold text-base text-blue-700 bg-white border border-blue-200 rounded-xl shadow-sm hover:bg-blue-50 transition-colors w-fit"
@@ -179,7 +206,7 @@ export default function OrderHistory() {
             aria-expanded={filtersOpen}
             style={{ minWidth: 120 }}
           >
-            <span>Filters</span>
+            <span>{t('filters')}</span>
             {filtersOpen ? (
               <ChevronUp className="w-5 h-5 transition-transform" />
             ) : (
@@ -191,7 +218,7 @@ export default function OrderHistory() {
               <div className="bg-white rounded-xl p-4">
                 <div className="flex flex-col md:flex-row md:items-end gap-4">
                   <div className="flex-1 min-w-[240px] md:max-w-xs">
-                    <label className="block text-sm text-gray-600 mb-1">Date Range</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('dateRange')}</label>
                     <div className="flex items-end gap-2">
                       <input
                         type="date"
@@ -209,14 +236,14 @@ export default function OrderHistory() {
                         min={dateStart || undefined}
                       />
                       {(dateStart || dateEnd) && (
-                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setDateStart(''); setDateEnd(''); setCurrentPage(1); }} title="清除">
+                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setDateStart(''); setDateEnd(''); setCurrentPage(1); }} title={t('clearDateRange')}>
                           ×
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="w-40 min-w-[140px]">
-                    <label className="block text-sm text-gray-600 mb-1">Status</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('status')}</label>
                     <div className="relative" ref={statusDropdownRef}>
                       <button
                         type="button"
@@ -241,7 +268,7 @@ export default function OrderHistory() {
                         </div>
                       )}
                       {statusFilter !== 'All' && (
-                        <button className="absolute right-2 top-1.5 text-gray-400 hover:text-red-500 px-1" onClick={() => { setStatusFilter('All'); setCurrentPage(1); }} title="清除" type="button">
+                        <button className="absolute right-2 top-1.5 text-gray-400 hover:text-red-500 px-1" onClick={() => { setStatusFilter('All'); setCurrentPage(1); }} title={t('clearStatus')} type="button">
                           ×
                         </button>
                       )}
@@ -250,35 +277,35 @@ export default function OrderHistory() {
                 </div>
                 <div className="flex flex-col md:flex-row md:items-end gap-4">
                   <div className="flex-1 min-w-[120px]">
-                    <label className="block text-sm text-gray-600 mb-1">Recipient</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('recipient')}</label>
                     <div className="flex gap-1">
                       <input
                         ref={recipientInputRef}
                         type="text"
                         className="border border-gray-300 rounded px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white relative z-10"
-                        placeholder="Enter recipient name"
+                        placeholder={t('enterRecipientName')}
                         value={recipientFilter}
                         onChange={e => { setRecipientFilter(e.target.value); setCurrentPage(1); }}
                       />
                       {recipientFilter && (
-                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setRecipientFilter(''); setCurrentPage(1); }} title="清除">
+                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setRecipientFilter(''); setCurrentPage(1); }} title={t('clearRecipient')}>
                           ×
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="flex-1 min-w-[120px]">
-                    <label className="block text-sm text-gray-600 mb-1">Sender</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('sender')}</label>
                     <div className="flex gap-1">
                       <input
                         type="text"
                         className="border border-gray-300 rounded px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white relative z-10"
-                        placeholder="Enter sender name"
+                        placeholder={t('enterSenderName')}
                         value={senderFilter}
                         onChange={e => { setSenderFilter(e.target.value); setCurrentPage(1); }}
                       />
                       {senderFilter && (
-                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setSenderFilter(''); setCurrentPage(1); }} title="清除">
+                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setSenderFilter(''); setCurrentPage(1); }} title={t('clearSender')}>
                           ×
                         </button>
                       )}
@@ -287,34 +314,34 @@ export default function OrderHistory() {
                 </div>
                 <div className="flex flex-1 min-w-[240px] gap-2 md:mt-0 mt-2 items-end">
                   <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">Country</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('country')}</label>
                     <div className="flex gap-1">
                       <input
                         type="text"
                         className="border border-gray-300 rounded px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white relative z-10"
-                        placeholder="Enter country"
+                        placeholder={t('enterCountry')}
                         value={countryFilter}
                         onChange={e => { setCountryFilter(e.target.value); setCurrentPage(1); }}
                       />
                       {countryFilter && (
-                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setCountryFilter(''); setCurrentPage(1); }} title="清除">
+                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setCountryFilter(''); setCurrentPage(1); }} title={t('clearCountry')}>
                           ×
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">City</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('city')}</label>
                     <div className="flex gap-1">
                       <input
                         type="text"
                         className="border border-gray-300 rounded px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white relative z-10"
-                        placeholder="Enter city"
+                        placeholder={t('enterCity')}
                         value={cityFilter}
                         onChange={e => { setCityFilter(e.target.value); setCurrentPage(1); }}
                       />
                       {cityFilter && (
-                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setCityFilter(''); setCurrentPage(1); }} title="清除">
+                        <button className="text-gray-400 hover:text-red-500 px-2" onClick={() => { setCityFilter(''); setCurrentPage(1); }} title={t('clearCity')}>
                           ×
                         </button>
                       )}
@@ -329,24 +356,38 @@ export default function OrderHistory() {
           <div className="border-t border-gray-200"></div>
           <ul className="divide-y divide-gray-200 bg-white rounded-xl">
           {currentOrders.map(order => (
-              <li key={order.id} className="relative">
-              <Link
-                href={`/track/detail/${order.id}`}
-                className="block py-4 px-2 hover:bg-blue-50 transition-colors"
-              >
-                  <span className={`absolute top-0 right-4 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10`}>{order.status}</span>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-mono text-base text-gray-800">{order.id}</span>
+            <li key={order.id} className="relative">
+              <div className="flex flex-col gap-1 py-4 px-2 hover:bg-blue-50 transition-colors">
+                <span className={`absolute right-4 top-0 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10 rounded`}>{t(statusKeyMap[order.status] || order.status)}</span>
+                <span className="font-mono text-base text-gray-800 mb-1 block">{order.id}</span>
+                <div className="flex items-center text-sm text-gray-500 mb-1">
+                  <span className="truncate flex-1">{(() => {
+                    const parts = order.summary.split(',');
+                    if (parts.length === 3) {
+                      const [names, weight, service] = parts;
+                      return `${names},${weight},${t(serviceTypeKeyMap[service.trim()] || service.trim())}`;
+                    }
+                    return order.summary;
+                  })()}</span>
+                  {order.status === 'Pending Pickup' && (
+                    <button
+                      className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1 ml-3"
+                      style={{ minWidth: '96px', alignSelf: 'flex-start', marginRight: '0.5rem' }}
+                      onClick={() => handleRemind(order)}
+                    >
+                      <Bell className="h-4 w-4 mr-1" />
+                      {t('remind')}
+                    </button>
+                  )}
                 </div>
-                <div className="text-sm text-gray-500">{order.summary}</div>
-              </Link>
+              </div>
             </li>
           ))}
         </ul>
         </div>
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-500">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} shipments
+            {`${t('showingShipments')} ${startIndex + 1}-${Math.min(endIndex, filteredOrders.length)} ${t('of')} ${filteredOrders.length} ${t('shipments')}`}
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -355,7 +396,7 @@ export default function OrderHistory() {
               className="flex items-center px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-black"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Prev
+              {t('prev')}
             </button>
             <div className="flex space-x-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -377,7 +418,7 @@ export default function OrderHistory() {
               disabled={currentPage === totalPages}
               className="flex items-center px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-black"
             >
-              Next
+              {t('next')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </button>
           </div>
