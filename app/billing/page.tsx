@@ -23,8 +23,10 @@ import {
   Bell,
   Settings
 } from 'lucide-react'
+import { useTranslation } from '../utils/translations';
 
 export default function BillingPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedPeriod, setSelectedPeriod] = useState('current')
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
@@ -176,9 +178,9 @@ export default function BillingPage() {
           <div className="flex items-center h-16">
             <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to Home
+              {t('backToHome')}
             </Link>
-            <h1 className="ml-6 text-xl font-semibold text-gray-900">Billing & Payments</h1>
+            <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('billingPayments')}</h1>
           </div>
         </div>
       </header>
@@ -192,9 +194,9 @@ export default function BillingPage() {
                 <Shield className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-3 flex-1">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Business Verification Required</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('businessVerificationRequired')}</h3>
                 <p className="text-gray-600 mb-4">
-                  To access monthly billing and other premium features, please complete your business verification.
+                  {t('businessVerificationDesc')}
                 </p>
                 <div className="flex items-center space-x-4">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getVerificationStatusColor(merchantStatus.verificationStatus)}`}>
@@ -205,7 +207,7 @@ export default function BillingPage() {
                     onClick={() => setIsVerificationModalOpen(true)}
                     className="bg-brown-600 text-white px-4 py-2 rounded-md hover:bg-brown-700 transition-colors font-medium"
                   >
-                    Complete Verification
+                    {t('completeVerification')}
                   </button>
                 </div>
               </div>
@@ -221,7 +223,7 @@ export default function BillingPage() {
                 <Euro className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Spent</p>
+                <p className="text-sm text-gray-600">{t('totalSpent')}</p>
                 <p className="text-2xl font-bold text-gray-900">€3,150.24</p>
               </div>
             </div>
@@ -233,7 +235,7 @@ export default function BillingPage() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Paid Bills</p>
+                <p className="text-sm text-gray-600">{t('paidBills')}</p>
                 <p className="text-2xl font-bold text-gray-900">€1,250.75</p>
               </div>
             </div>
@@ -245,7 +247,7 @@ export default function BillingPage() {
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-sm text-gray-600">{t('pending')}</p>
                 <p className="text-2xl font-bold text-gray-900">€1,899.50</p>
               </div>
             </div>
@@ -257,7 +259,7 @@ export default function BillingPage() {
                 <Calendar className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Monthly Bills</p>
+                <p className="text-sm text-gray-600">{t('monthlyBills')}</p>
                 <p className="text-2xl font-bold text-gray-900">2</p>
               </div>
             </div>
@@ -276,7 +278,7 @@ export default function BillingPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Overview
+                {t('overview')}
               </button>
               <button
                 onClick={() => setActiveTab('monthly_bills')}
@@ -286,7 +288,7 @@ export default function BillingPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Monthly Bills
+                {t('monthlyBills')}
               </button>
               <button
                 onClick={() => setActiveTab('invoices')}
@@ -296,7 +298,7 @@ export default function BillingPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Individual Invoices
+                {t('individualInvoices')}
               </button>
               <button
                 onClick={() => setActiveTab('payment_methods')}
@@ -306,7 +308,7 @@ export default function BillingPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Payment Methods
+                {t('paymentMethods')}
               </button>
             </nav>
           </div>
@@ -315,36 +317,36 @@ export default function BillingPage() {
             {activeTab === 'overview' && (
               <div>
                 <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Billing Status</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">{t('monthlyBillingStatus')}</h3>
                   {merchantStatus.monthlyBillingEligible ? (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center">
                         <CheckCircle2 className="h-5 w-5 text-green-600 mr-2" />
-                        <span className="text-green-800 font-medium">Monthly billing is active</span>
+                        <span className="text-green-800 font-medium">{t('monthlyBillingActive')}</span>
                       </div>
-                      <p className="text-green-700 mt-1">Your business is eligible for monthly consolidated billing.</p>
+                      <p className="text-green-700 mt-1">{t('monthlyBillingEligibleDesc')}</p>
                     </div>
                   ) : (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <div className="flex items-center">
                         <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                        <span className="text-yellow-800 font-medium">Monthly billing not available</span>
+                        <span className="text-yellow-800 font-medium">{t('monthlyBillingNotAvailable')}</span>
                       </div>
-                      <p className="text-yellow-700 mt-1">Complete business verification to enable monthly billing.</p>
+                      <p className="text-yellow-700 mt-1">{t('monthlyBillingNotAvailableDesc')}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-4">Recent Monthly Bills</h4>
+                    <h4 className="font-medium text-gray-900 mb-4">{t('recentMonthlyBills')}</h4>
                     <div className="space-y-3">
                       {monthlyBills.slice(0, 3).map((bill) => (
                         <div key={bill.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex justify-between items-start">
                             <div>
                               <h5 className="font-medium text-gray-900">{bill.period}</h5>
-                              <p className="text-sm text-gray-600">{bill.shipments} shipments</p>
+                              <p className="text-sm text-gray-600">{bill.shipments} {t('shipments')}</p>
                             </div>
                             <div className="text-right">
                               <p className="font-semibold text-gray-900">{formatCurrency(bill.amount)}</p>
@@ -360,26 +362,26 @@ export default function BillingPage() {
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-4">Quick Actions</h4>
+                    <h4 className="font-medium text-gray-900 mb-4">{t('quickActions')}</h4>
                     <div className="space-y-3">
                       <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center">
                           <Download className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">Download Current Bill</span>
+                          <span className="font-medium text-gray-900">{t('downloadCurrentBill')}</span>
                         </div>
                         <ChevronRight className="h-4 w-4 text-gray-400" />
                       </button>
                       <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">Update Payment Method</span>
+                          <span className="font-medium text-gray-900">{t('updatePaymentMethod')}</span>
                         </div>
                         <ChevronRight className="h-4 w-4 text-gray-400" />
                       </button>
                       <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center">
                           <Settings className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">Billing Preferences</span>
+                          <span className="font-medium text-gray-900">{t('billingPreferences')}</span>
                         </div>
                         <ChevronRight className="h-4 w-4 text-gray-400" />
                       </button>
@@ -392,16 +394,16 @@ export default function BillingPage() {
             {activeTab === 'monthly_bills' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">Monthly Bills</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{t('monthlyBills')}</h3>
                   <select
                     value={selectedPeriod}
                     onChange={(e) => setSelectedPeriod(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
                   >
-                    <option value="current">Current Period</option>
-                    <option value="last_3_months">Last 3 Months</option>
-                    <option value="last_6_months">Last 6 Months</option>
-                    <option value="all">All Time</option>
+                    <option value="current">{t('currentPeriod')}</option>
+                    <option value="last_3_months">{t('last3Months')}</option>
+                    <option value="last_6_months">{t('last6Months')}</option>
+                    <option value="all">{t('allTime')}</option>
                   </select>
                 </div>
 
@@ -421,19 +423,19 @@ export default function BillingPage() {
                       
                       <div className="grid md:grid-cols-4 gap-4 mb-4">
                         <div>
-                          <p className="text-sm text-gray-600">Bill Amount</p>
+                          <p className="text-sm text-gray-600">{t('billAmount')}</p>
                           <p className="text-xl font-bold text-gray-900">{formatCurrency(bill.amount)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Shipments</p>
+                          <p className="text-sm text-gray-600">{t('shipments')}</p>
                           <p className="text-lg font-semibold text-gray-900">{bill.shipments}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Issue Date</p>
+                          <p className="text-sm text-gray-600">{t('issueDate')}</p>
                           <p className="text-sm font-medium text-gray-900">{formatDate(bill.date)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Due Date</p>
+                          <p className="text-sm text-gray-600">{t('dueDate')}</p>
                           <p className="text-sm font-medium text-gray-900">{formatDate(bill.dueDate)}</p>
                         </div>
                       </div>
@@ -441,11 +443,11 @@ export default function BillingPage() {
                       <div className="flex items-center space-x-3">
                         <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
                           <Eye className="h-4 w-4 mr-2" />
-                          View Details
+                          {t('viewDetails')}
                         </button>
                         <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
                           <Download className="h-4 w-4 mr-2" />
-                          Download PDF
+                          {t('downloadPDF')}
                         </button>
                       </div>
                     </div>
@@ -457,10 +459,10 @@ export default function BillingPage() {
             {activeTab === 'invoices' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">Individual Invoices</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{t('individualInvoices')}</h3>
                   <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
                     <Download className="h-4 w-4 mr-2" />
-                    Export All
+                    {t('exportAll')}
                   </button>
                 </div>
 
@@ -478,8 +480,8 @@ export default function BillingPage() {
                           </div>
                           <p className="text-gray-600 mb-2">{invoice.description}</p>
                           <div className="flex items-center space-x-6 text-sm text-gray-500">
-                            <span>Date: {formatDate(invoice.date)}</span>
-                            <span>Due: {formatDate(invoice.dueDate)}</span>
+                            <span>{t('date')}: {formatDate(invoice.date)}</span>
+                            <span>{t('due')}: {formatDate(invoice.dueDate)}</span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
@@ -505,10 +507,10 @@ export default function BillingPage() {
             {activeTab === 'payment_methods' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">Payment Methods</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{t('paymentMethods')}</h3>
                   <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Payment Method
+                    {t('addPaymentMethod')}
                   </button>
                 </div>
 
@@ -523,24 +525,24 @@ export default function BillingPage() {
                           <div>
                             <h4 className="font-medium text-gray-900">{method.name}</h4>
                             {method.expiry && (
-                              <p className="text-sm text-gray-500">Expires {method.expiry}</p>
+                              <p className="text-sm text-gray-500">{t('expires')}: {method.expiry}</p>
                             )}
                             {method.email && (
-                              <p className="text-sm text-gray-500">{method.email}</p>
+                              <p className="text-sm text-gray-500">{t('email')}: {method.email}</p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
                           {method.isDefault && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brown-100 text-brown-800">
-                              Default
+                              {t('default')}
                             </span>
                           )}
                           <button className="text-brown-600 hover:text-brown-700 text-sm font-medium">
-                            Edit
+                            {t('edit')}
                           </button>
                           <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                            Remove
+                            {t('remove')}
                           </button>
                         </div>
                       </div>
@@ -550,10 +552,10 @@ export default function BillingPage() {
 
                 {/* Add New Payment Method Form */}
                 <div className="mt-8 border-t pt-8">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Add New Payment Method</h4>
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">{t('addNewPaymentMethod')}</h4>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardNumber')}</label>
                       <input
                         type="text"
                         placeholder="1234 5678 9012 3456"
@@ -561,7 +563,7 @@ export default function BillingPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardholderName')}</label>
                       <input
                         type="text"
                         placeholder="John Doe"
@@ -569,7 +571,7 @@ export default function BillingPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('expiryDate')}</label>
                       <input
                         type="text"
                         placeholder="MM/YY"
@@ -577,7 +579,7 @@ export default function BillingPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cvv')}</label>
                       <input
                         type="text"
                         placeholder="123"
@@ -590,12 +592,12 @@ export default function BillingPage() {
                           type="checkbox"
                           className="h-4 w-4 text-brown-600 focus:ring-brown-500"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Set as default payment method</span>
+                        <span className="ml-2 text-sm text-gray-700">{t('setAsDefaultPaymentMethod')}</span>
                       </label>
                     </div>
                     <div className="md:col-span-2">
                       <button className="w-full px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                        Add Payment Method
+                        {t('addPaymentMethod')}
                       </button>
                     </div>
                   </div>
@@ -610,33 +612,33 @@ export default function BillingPage() {
       {isVerificationModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Business Verification</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('businessVerification')}</h3>
             <p className="text-gray-600 mb-6">
-              To enable monthly billing, we need to verify your business information. This process typically takes 2-3 business days.
+              {t('businessVerificationDescModal')}
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessName')}</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  placeholder="Your Business Name"
+                  placeholder={t('yourBusinessName')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Registration Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessRegistrationNumber')}</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  placeholder="VAT Number or Business ID"
+                  placeholder={t('vatNumberOrBusinessId')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessAddress')}</label>
                 <textarea
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
                   rows={3}
-                  placeholder="Full business address"
+                  placeholder={t('fullBusinessAddress')}
                 />
               </div>
             </div>
@@ -645,10 +647,10 @@ export default function BillingPage() {
                 onClick={() => setIsVerificationModalOpen(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button className="flex-1 px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                Submit for Review
+                {t('submitForReview')}
               </button>
             </div>
           </div>
