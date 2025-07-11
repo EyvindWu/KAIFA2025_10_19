@@ -632,13 +632,16 @@ export default function ShipPage() {
                   <button
                     type="button"
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      packages: [
-                        ...prev.packages,
-                        { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, fragile: false }
-                      ]
-                    }))}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        packages: [
+                          ...prev.packages,
+                          { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, fragile: false }
+                        ]
+                      }));
+                      setActivePackageIdx(formData.packages.length); // 新包裹索引
+                    }}
                   >
                     + {t('addPackage')}
                   </button>
