@@ -21,6 +21,7 @@ import AddressBookIcon from '../components/icons/AddressBookIcon'
 import DeleteIcon from '../components/icons/DeleteIcon'
 import dynamic from 'next/dynamic'
 import { useTranslation } from '../utils/translations'
+import { SystemModal } from '../components/ClientProviders';
 
 const SenderIcon = dynamic(() => import('../components/icons/SenderIcon'), { ssr: false })
 
@@ -113,6 +114,7 @@ export default function ShipPage() {
   const [selectedSenderIndex, setSelectedSenderIndex] = useState(-1);
   const [saveToAddressBook, setSaveToAddressBook] = useState(false);
   const [showKfTooltip, setShowKfTooltip] = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -128,7 +130,7 @@ export default function ShipPage() {
     } else {
       // Submit order
       console.log('Submitting order:', formData)
-      alert(t('orderSubmittedSuccessfully'))
+      setShowOrderSuccess(true)
     }
   }
 
@@ -858,96 +860,104 @@ export default function ShipPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center h-16">
-            <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              {t('backToHome')}
-            </Link>
-            <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('createShipment')}</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Progress Steps */}
-        <div className="mb-8 relative">
-          {/* Progress Bar: blue bar ends at the center of the current step's icon */}
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-0 h-2 w-full">
-            {/* Gray bar (full width) */}
-            <div className="absolute left-0 top-0 h-2 w-full bg-gray-300 rounded-full"></div>
-            {/* Blue bar (width depends on step) */}
-            <div
-              className="absolute left-0 top-0 h-2 bg-blue-600 rounded-full transition-all duration-300"
-              style={{
-                width:
-                  step === 1 ? '12.5%' :
-                  step === 2 ? '37.5%' :
-                  step === 3 ? '62.5%' :
-                  '100%'
-              }}
-            ></div>
-          </div>
-          {/* 四等分ICON+文字 */}
-          <div className="grid grid-cols-4 relative z-10">
-            {steps.map((stepItem, index) => (
-              <div key={stepItem.number} className="flex flex-col items-center">
-                <div className={`flex items-center justify-center w-14 h-14 rounded-full border-2 text-2xl mb-2 ${
-                  step >= stepItem.number
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-white border-gray-300 text-gray-500'
-                }`}>
-                  <stepItem.icon className="h-8 w-8" />
-                </div>
-                <span className={`text-center font-bold ${step >= stepItem.number ? 'text-blue-700' : 'text-gray-500'} text-base`}>
-                  {index === 0 && (<><span>{t('sender')}</span><br/><span>{t('info')}</span></>)}
-                  {index === 1 && (<><span>{t('recipient')}</span><br/><span>{t('info')}</span></>)}
-                  {index === 2 && (<span>{t('packageService')}</span>)}
-                  {index === 3 && (<span>{t('review')}</span>)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-          <form onSubmit={handleSubmit}>
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-            {step === 3 && renderStep3()}
-            {step === 4 && renderStep4()}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <button
-                type="button"
-                onClick={() => setStep(Math.max(1, step - 1))}
-                disabled={step === 1}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('previous')}
-              </button>
-              
-              <button
-                type="submit"
-                className={
-                  (step !== 4 && !isStepValid(step, formData))
-                    ? "px-6 py-2 bg-gray-300 text-gray-400 border border-gray-200 rounded-md cursor-not-allowed opacity-60"
-                    : "px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                }
-              >
-                {step === 4 ? t('placeOrder') : t('next')}
-              </button>
+    <>
+      <SystemModal
+        open={showOrderSuccess}
+        onClose={() => setShowOrderSuccess(false)}
+        title={t('orderSuccessTitle')}
+        message={t('orderSubmittedSuccessfully')}
+      />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="flex items-center h-16">
+              <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                {t('backToHome')}
+              </Link>
+              <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('createShipment')}</h1>
             </div>
-          </form>
-        </div>
+          </div>
+        </header>
+
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          {/* Progress Steps */}
+          <div className="mb-8 relative">
+            {/* Progress Bar: blue bar ends at the center of the current step's icon */}
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-0 h-2 w-full">
+              {/* Gray bar (full width) */}
+              <div className="absolute left-0 top-0 h-2 w-full bg-gray-300 rounded-full"></div>
+              {/* Blue bar (width depends on step) */}
+              <div
+                className="absolute left-0 top-0 h-2 bg-blue-600 rounded-full transition-all duration-300"
+                style={{
+                  width:
+                    step === 1 ? '12.5%' :
+                    step === 2 ? '37.5%' :
+                    step === 3 ? '62.5%' :
+                    '100%'
+                }}
+              ></div>
+            </div>
+            {/* 四等分ICON+文字 */}
+            <div className="grid grid-cols-4 relative z-10">
+              {steps.map((stepItem, index) => (
+                <div key={stepItem.number} className="flex flex-col items-center">
+                  <div className={`flex items-center justify-center w-14 h-14 rounded-full border-2 text-2xl mb-2 ${
+                    step >= stepItem.number
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-white border-gray-300 text-gray-500'
+                  }`}>
+                    <stepItem.icon className="h-8 w-8" />
+                  </div>
+                  <span className={`text-center font-bold ${step >= stepItem.number ? 'text-blue-700' : 'text-gray-500'} text-base`}>
+                    {index === 0 && (<><span>{t('sender')}</span><br/><span>{t('info')}</span></>)}
+                    {index === 1 && (<><span>{t('recipient')}</span><br/><span>{t('info')}</span></>)}
+                    {index === 2 && (<span>{t('packageService')}</span>)}
+                    {index === 3 && (<span>{t('review')}</span>)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+            <form onSubmit={handleSubmit}>
+              {step === 1 && renderStep1()}
+              {step === 2 && renderStep2()}
+              {step === 3 && renderStep3()}
+              {step === 4 && renderStep4()}
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8">
+                <button
+                  type="button"
+                  onClick={() => setStep(Math.max(1, step - 1))}
+                  disabled={step === 1}
+                  className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('previous')}
+                </button>
+                
+                <button
+                  type="submit"
+                  className={
+                    (step !== 4 && !isStepValid(step, formData))
+                      ? "px-6 py-2 bg-gray-300 text-gray-400 border border-gray-200 rounded-md cursor-not-allowed opacity-60"
+                      : "px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  }
+                >
+                  {step === 4 ? t('placeOrder') : t('next')}
+                </button>
+              </div>
+            </form>
+          </div>
 
 
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   )
 }

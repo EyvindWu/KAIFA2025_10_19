@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
 import { 
@@ -17,11 +17,13 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslation } from '../utils/translations';
+import { SystemModal } from '../components/ClientProviders';
 
 export default function UserDashboard() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading } = useAuth()
   const { t } = useTranslation();
+  const [showRemindSuccess, setShowRemindSuccess] = useState(false);
 
   // 检查权限
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function UserDashboard() {
       time: new Date().toISOString(),
     });
     localStorage.setItem('kaifa-reminders', JSON.stringify(reminders));
-    alert(t('remindSent'));
+    setShowRemindSuccess(true);
   };
 
   if (isLoading) {
@@ -142,7 +144,13 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <SystemModal
+        open={showRemindSuccess}
+        onClose={() => setShowRemindSuccess(false)}
+        title={t('remindSuccessTitle')}
+        message={t('remindSent')}
+      />
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -288,6 +296,6 @@ export default function UserDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 } 

@@ -322,6 +322,8 @@ export const translations = {
     last6Months: 'Last 6 Months',
     allTime: 'All Time',
     totalSpent: 'Total Spent',
+    orderSuccessTitle: 'Order Submitted',
+    remindSuccessTitle: 'Reminder Sent',
   },
   zh: {
     shipping: '发货',
@@ -474,7 +476,7 @@ export const translations = {
     kfCode: 'KF代码',
     pallet: '托盘',
     monthlyBillingDescription: '当月账单将发送至您的邮箱，并可以在"个人中心"查看。',
-    orderSubmittedSuccessfully: '订单提交成功！',
+    orderSubmittedSuccessfully: '您的订单已成功提交！',
     germany: '德国',
     france: '法国',
     italy: '意大利',
@@ -649,6 +651,8 @@ export const translations = {
     last6Months: '近六个月',
     allTime: '全部',
     totalSpent: '总支出',
+    orderSuccessTitle: '下单成功',
+    remindSuccessTitle: '催单已发送',
   }
 }
 
