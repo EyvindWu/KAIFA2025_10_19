@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { useTranslation } from '../../../utils/translations';
 import Link from 'next/link';
 import { personInfoMap, buildTimeline } from './utils';
-// import orderHistoryList from '../../history/orderList';
+import { orderList } from '../../history/orderList';
 
 // 统一sender/recipient类型，兼容mock和自动生成
 interface Person {
@@ -109,23 +109,6 @@ const orders: {
   }
 ];
 
-// 复制Order History的orderList
-const orderList = [
-  { id: '1Z999AA10123456795', status: 'Pending Pickup', summary: 'Andy Liu → Xavier, 1.8kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456794', status: 'Pending Pickup', summary: 'Andy Liu → Victor, 2.1kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456793', status: 'In Transit', summary: 'Andy Liu → Tina, 3.5kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456792', status: 'In Transit', summary: 'Andy Liu → Rose, 0.6kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456791', status: 'Delivered', summary: 'Andy Liu → Paul, 1.9kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456790', status: 'Delivered', summary: 'Andy Liu → Noah, 2.8kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456789', status: 'Delivered', summary: 'Andy Liu → Leo, 1.5kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456788', status: 'Delivered', summary: 'Andy Liu → Jack, 4.2kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456787', status: 'Delivered', summary: 'Andy Liu → Henry, 0.8kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456786', status: 'Delivered', summary: 'Andy Liu → Frank, 3.1kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456785', status: 'Delivered', summary: 'Andy Liu → Dave, 1.2kg, Standard', href: '/track/detail' },
-  { id: '1Z999AA10123456784', status: 'Delivered', summary: 'Andy Liu → Bob, 2.5kg, Express', href: '/track/detail' },
-  { id: '1Z999AA10123456783', status: 'Cancelled', summary: 'Andy Liu → Lily, 2.0kg, Standard', href: '/track/detail', recipient: 'Lily', createdAt: '2024-05-01' },
-];
-
 // 订单状态和服务类型英文→key映射表
 const statusKeyMap: { [key: string]: string } = {
   "Pending Pickup": "pendingPickup",
@@ -174,45 +157,41 @@ export default function TrackOrderDetail() {
   const params = useParams();
   const trackingNo = params?.trackingNo as string;
   const { t } = useTranslation();
-  const order = orders.find(o => o.trackingNumber === trackingNo)
-    || (() => {
-      const his = orderList.find(o => o.id === trackingNo);
-      let sender = 'Sender', recipient = 'Recipient', summary = '-', weight = '-', type = '-';
-      if (his && his.summary) {
-        const match = his.summary.match(/^(.*?) → (.*?)(,|，)(.*)$/);
-        if (match) {
-          sender = match[1].trim();
-          const rest = match[2].split(',');
-          recipient = rest[0].trim();
-          summary = his.summary;
-          if (rest[1]) weight = rest[1].replace('kg','').trim();
-          if (rest[2]) type = rest[2].trim();
-        }
-      }
-      // 优先查找详细信息
-      const senderInfo = personInfoMap[sender] || { name: sender, email: '-', phone: '-', address: '-', city: '-', postalCode: '-', country: '-' };
-      const recipientInfo = personInfoMap[recipient] || { name: recipient, email: '-', phone: '-', address: '-', city: '-', postalCode: '-', country: '-' };
-      return {
-        trackingNumber: trackingNo,
-        status: his?.status || 'Pending Pickup',
-        sender: senderInfo,
-        recipient: recipientInfo,
-        timeline: buildTimeline(his?.status || 'Pending Pickup'),
-        package: {
-          packageType: type !== '-' ? type : 'Standard',
-          weight: weight !== '-' ? weight : '2.0',
-          length: '30',
-          width: '20',
-          height: '15',
-          description: summary,
-          serviceType: 'Express',
-          insurance: 'Yes (insured up to €200)',
-          needsPallet: 'No',
-          palletSize: '',
-          trackingUrl: 'https://www.ups.com/track?loc=en_US&tracknum=' + trackingNo,
-        }
-      };
-    })();
+  // 直接用orderList.find(o => o.id === trackingNo)获取详细结构
+  const order = orderList.find(o => o.id === trackingNo);
+  let senderName = '', recipientName = '', weight = '', service = '';
+  if (order && order.summary) {
+    const match = order.summary.match(/^(.*?) → (.*?)(,|，)\s*([\d.]+kg),\s*(.*)$/);
+    if (match) {
+      senderName = match[1].trim();
+      recipientName = match[2].trim();
+      weight = match[4].trim();
+      service = match[5].trim();
+    }
+  }
+  // 优先查找详细信息
+  const senderInfo = personInfoMap[senderName] || { name: senderName, email: '-', phone: '-', address: '-', city: '-', postalCode: '-', country: '-' };
+  const recipientInfo = personInfoMap[recipientName] || { name: recipientName, email: '-', phone: '-', address: '-', city: '-', postalCode: '-', country: '-' };
+  const orderDetails = {
+    trackingNumber: trackingNo,
+    status: order?.status || 'Pending Pickup',
+    sender: senderInfo,
+    recipient: recipientInfo,
+    timeline: buildTimeline(order?.status || 'Pending Pickup'),
+    package: {
+      packageType: service !== '' ? service : 'Standard',
+      weight: weight !== '' ? weight : '2.0',
+      length: '30',
+      width: '20',
+      height: '15',
+      description: order?.summary || 'No description available',
+      serviceType: service !== '' ? service : 'Express',
+      insurance: 'Yes (insured up to €200)',
+      needsPallet: 'No',
+      palletSize: '',
+      trackingUrl: 'https://www.ups.com/track?loc=en_US&tracknum=' + trackingNo,
+    }
+  };
   const [showAll, setShowAll] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
@@ -242,9 +221,9 @@ export default function TrackOrderDetail() {
         <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4">
           <div className="flex-1 min-w-0">
             <div className="text-gray-500 text-sm">{t('orderNumber')}</div>
-            <div className="font-mono text-lg font-bold text-gray-900 truncate">{order.trackingNumber}</div>
+            <div className="font-mono text-lg font-bold text-gray-900 truncate">{orderDetails.trackingNumber}</div>
           </div>
-          <div className="flex-shrink-0 mt-2 md:mt-0">
+          <div className="flex-shrink-0 mt-2 md:mt-0 flex items-center gap-2">
             <span
               className={
                 `inline-block px-3 py-1 rounded-full font-semibold text-base ` +
@@ -266,23 +245,23 @@ export default function TrackOrderDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="font-bold text-gray-700 mb-1">{t('sender')}</div>
-            <div className="text-sm text-gray-800">{order.sender.name}</div>
-            <div className="text-xs text-gray-500">{t('email')}: {order.sender.email}</div>
-            <div className="text-xs text-gray-500">{t('phone')}: {order.sender.phone}</div>
-            <div className="text-xs text-gray-500">{t('address')}: {order.sender.address}</div>
-            <div className="text-xs text-gray-500">{t('city')}: {order.sender.city}</div>
-            <div className="text-xs text-gray-500">{t('postalCode')}: {order.sender.postalCode}</div>
-            <div className="text-xs text-gray-500">{t('country')}: {t(order.sender.country.toLowerCase())}</div>
+            <div className="text-sm text-gray-800">{orderDetails.sender.name}</div>
+            <div className="text-xs text-gray-500">{t('email')}: {orderDetails.sender.email}</div>
+            <div className="text-xs text-gray-500">{t('phone')}: {orderDetails.sender.phone}</div>
+            <div className="text-xs text-gray-500">{t('address')}: {orderDetails.sender.address}</div>
+            <div className="text-xs text-gray-500">{t('city')}: {orderDetails.sender.city}</div>
+            <div className="text-xs text-gray-500">{t('postalCode')}: {orderDetails.sender.postalCode}</div>
+            <div className="text-xs text-gray-500">{t('country')}: {t(orderDetails.sender.country.toLowerCase())}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="font-bold text-gray-700 mb-1">{t('recipient')}</div>
-            <div className="text-sm text-gray-800">{order.recipient.name}</div>
-            <div className="text-xs text-gray-500">{t('email')}: {order.recipient.email}</div>
-            <div className="text-xs text-gray-500">{t('phone')}: {order.recipient.phone}</div>
-            <div className="text-xs text-gray-500">{t('address')}: {order.recipient.address}</div>
-            <div className="text-xs text-gray-500">{t('city')}: {order.recipient.city}</div>
-            <div className="text-xs text-gray-500">{t('postalCode')}: {order.recipient.postalCode}</div>
-            <div className="text-xs text-gray-500">{t('country')}: {t(order.recipient.country.toLowerCase())}</div>
+            <div className="text-sm text-gray-800">{orderDetails.recipient.name}</div>
+            <div className="text-xs text-gray-500">{t('email')}: {orderDetails.recipient.email}</div>
+            <div className="text-xs text-gray-500">{t('phone')}: {orderDetails.recipient.phone}</div>
+            <div className="text-xs text-gray-500">{t('address')}: {orderDetails.recipient.address}</div>
+            <div className="text-xs text-gray-500">{t('city')}: {orderDetails.recipient.city}</div>
+            <div className="text-xs text-gray-500">{t('postalCode')}: {orderDetails.recipient.postalCode}</div>
+            <div className="text-xs text-gray-500">{t('country')}: {t(orderDetails.recipient.country.toLowerCase())}</div>
           </div>
         </div>
         <div className="mb-6">
@@ -292,13 +271,38 @@ export default function TrackOrderDetail() {
               <Clock className="h-5 w-5 text-blue-600 mr-2" />
               <span className="font-bold text-2xl text-blue-700">{t('orderDetails')}</span>
             </div>
-            <button
-              className="flex items-center px-3 py-1 border-2 border-teal-400 text-teal-700 bg-teal-50 rounded-full text-sm share-btn hover:bg-teal-100 focus:outline-none transition-colors"
-              onClick={() => setShowShare(true)}
-              type="button"
-            >
-              <Share2 className="h-4 w-4 mr-1" /> {t('share')}
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-lg hover:from-green-500 hover:to-green-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn"
+                onClick={() => setShowShare(true)}
+                type="button"
+              >
+                <Share2 className="h-5 w-5 mr-1" />
+                <span className="hidden sm:inline">{t('share')}</span>
+              </button>
+              {order.status === 'Pending Pickup' && (
+                <>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold"
+                    onClick={() => window.print()}
+                    type="button"
+                  >
+                    {/* Print icon */}
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 14h12v7H6z" /></svg>
+                    <span className="hidden sm:inline">{t('print')}</span>
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold"
+                    onClick={() => alert(t('remindSent'))}
+                    type="button"
+                  >
+                    {/* Bell icon */}
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12.001v2.157c0 .538-.214 1.055-.595 1.438L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    <span className="hidden sm:inline">{t('remind')}</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
             {/* 分享气泡 */}
             {showShare && (
@@ -331,7 +335,7 @@ export default function TrackOrderDetail() {
             )}
           <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
             <div className="border-l-2 border-blue-400 pl-4">
-              {order.timeline.map((item, idx) => (
+              {orderDetails.timeline.map((item, idx) => (
                 <div key={idx} className="mb-8 relative">
                   <div className="absolute -left-5 top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white"></div>
                   <div className="text-sm text-gray-700 font-semibold">{t(timelineStatusKeyMap[item.status] || item.status)}</div>
@@ -345,25 +349,25 @@ export default function TrackOrderDetail() {
         <div className="mb-6 bg-gray-50 rounded-lg p-4">
                       <div className="font-bold text-gray-700 mb-2">{t('packageInformation')}</div>
                       <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs">
-              <div><span className="text-gray-500">{t('packageType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[order.package.packageType] || order.package.packageType)}</span></div>
-              <div><span className="text-gray-500">{t('weight')}:</span> <span className="text-gray-800">{order.package.weight}</span></div>
-              <div><span className="text-gray-500">{t('length')}:</span> <span className="text-gray-800">{order.package.length}</span></div>
-              <div><span className="text-gray-500">{t('width')}:</span> <span className="text-gray-800">{order.package.width}</span></div>
-              <div><span className="text-gray-500">{t('height')}:</span> <span className="text-gray-800">{order.package.height}</span></div>
+              <div><span className="text-gray-500">{t('packageType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[orderDetails.package.packageType] || orderDetails.package.packageType)}</span></div>
+              <div><span className="text-gray-500">{t('weight')}:</span> <span className="text-gray-800">{orderDetails.package.weight}</span></div>
+              <div><span className="text-gray-500">{t('length')}:</span> <span className="text-gray-800">{orderDetails.package.length}</span></div>
+              <div><span className="text-gray-500">{t('width')}:</span> <span className="text-gray-800">{orderDetails.package.width}</span></div>
+              <div><span className="text-gray-500">{t('height')}:</span> <span className="text-gray-800">{orderDetails.package.height}</span></div>
               <div><span className="text-gray-500">{t('description')}:</span> <span className="text-gray-800">{(() => {
   // 例："Andy Liu → Noah, 2.8kg, Express"
-  const parts = order.package.description.split(',');
+  const parts = orderDetails.package.description.split(',');
   if (parts.length === 3) {
     const [names, weight, service] = parts;
     return `${names},${weight},${t(serviceTypeKeyMap[service.trim()] || service.trim())}`;
   }
-  return order.package.description;
+  return orderDetails.package.description;
 })()}</span></div>
-              <div><span className="text-gray-500">{t('serviceType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[order.package.serviceType] || order.package.serviceType)}</span></div>
-              <div><span className="text-gray-500">{t('insurance')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[order.package.insurance.split(' ')[0].replace(/\W+$/, '').toLowerCase().replace(/^./, (s: string) => s.toUpperCase())] || order.package.insurance)}</span></div>
-              <div><span className="text-gray-500">{t('needsPallet')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[order.package.needsPallet] || order.package.needsPallet)}</span></div>
-                <div><span className="text-gray-500">{t('palletSize')}:</span> <span className="text-gray-800">{order.package.palletSize}</span></div>
-              <div><span className="text-gray-500">{t('trackingUrl')}:</span> <a href={order.package.trackingUrl} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">{t('viewLogistics')}</a></div>
+              <div><span className="text-gray-500">{t('serviceType')}:</span> <span className="text-gray-800">{t(serviceTypeKeyMap[orderDetails.package.serviceType] || orderDetails.package.serviceType)}</span></div>
+              <div><span className="text-gray-500">{t('insurance')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[orderDetails.package.insurance.split(' ')[0].replace(/\W+$/, '').toLowerCase().replace(/^./, (s: string) => s.toUpperCase())] || orderDetails.package.insurance)}</span></div>
+              <div><span className="text-gray-500">{t('needsPallet')}:</span> <span className="text-gray-800">{t(yesNoKeyMap[orderDetails.package.needsPallet] || orderDetails.package.needsPallet)}</span></div>
+                <div><span className="text-gray-500">{t('palletSize')}:</span> <span className="text-gray-800">{orderDetails.package.palletSize}</span></div>
+              <div><span className="text-gray-500">{t('trackingUrl')}:</span> <a href={orderDetails.package.trackingUrl} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">{t('viewLogistics')}</a></div>
             </div>
         </div>
       </div>
