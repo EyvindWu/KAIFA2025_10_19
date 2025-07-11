@@ -54,6 +54,36 @@ export const personInfoMap: Record<string, Person> = {
   'Lily': {
     name: 'Lily', email: 'lily@email.com', phone: '+49 100000014', address: 'Lilystr. 14', city: 'Dortmund', postalCode: '44135', country: 'Germany',
   },
+  'Alice': {
+    name: 'Alice', email: 'alice@email.com', phone: '+49 100000015', address: 'Aliceweg 15', city: 'Berlin', postalCode: '10115', country: 'Germany',
+  },
+  'Carol': {
+    name: 'Carol', email: 'carol@email.com', phone: '+49 100000016', address: 'Carolplatz 16', city: 'Munich', postalCode: '80331', country: 'Germany',
+  },
+  'Eve': {
+    name: 'Eve', email: 'eve@email.com', phone: '+49 100000017', address: 'Eveweg 17', city: 'Hamburg', postalCode: '20095', country: 'Germany',
+  },
+  'Grace': {
+    name: 'Grace', email: 'grace@email.com', phone: '+49 100000018', address: 'Graceweg 18', city: 'Stuttgart', postalCode: '70173', country: 'Germany',
+  },
+  'Ivy': {
+    name: 'Ivy', email: 'ivy@email.com', phone: '+49 100000019', address: 'Ivyweg 19', city: 'Düsseldorf', postalCode: '40210', country: 'Germany',
+  },
+  'Kate': {
+    name: 'Kate', email: 'kate@email.com', phone: '+49 100000020', address: 'Kateweg 20', city: 'Leipzig', postalCode: '04109', country: 'Germany',
+  },
+  'Mona': {
+    name: 'Mona', email: 'mona@email.com', phone: '+49 100000021', address: 'Monaplatz 21', city: 'Frankfurt', postalCode: '60311', country: 'Germany',
+  },
+  'Olivia': {
+    name: 'Olivia', email: 'olivia@email.com', phone: '+49 100000023', address: 'Oliviaring 23', city: 'Cologne', postalCode: '50667', country: 'Germany',
+  },
+  'Peter': {
+    name: 'Peter', email: 'peter@email.com', phone: '+49 100000024', address: 'Peterstr. 24', city: 'Hamburg', postalCode: '20095', country: 'Germany',
+  },
+  'Sam': {
+    name: 'Sam', email: 'sam@email.com', phone: '+49 100000026', address: 'Samweg 26', city: 'Stuttgart', postalCode: '70173', country: 'Germany',
+  },
 };
 
 export function buildTimeline(status: string): any[] {

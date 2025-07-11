@@ -22,10 +22,49 @@ import DeleteIcon from '../components/icons/DeleteIcon'
 import dynamic from 'next/dynamic'
 import { useTranslation } from '../utils/translations'
 import { SystemModal } from '../components/ClientProviders';
+import AddressBook from '../components/AddressBook/AddressBook';
+// 移除方案3相关import
+// import ReactContactListDemo from '../components/AddressBook/ReactContactListDemo';
 
 const SenderIcon = dynamic(() => import('../components/icons/SenderIcon'), { ssr: false })
 
+// 生成50个A-Z联系人
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const addressList = Array.from({ length: 50 }, (_, i) => {
+  const letter = alphabet[i % alphabet.length];
+  return {
+    addressType: "residential",
+    receiverName: `${letter}erson${i + 1}`,
+    addressId: `${i + 1}`,
+    postalCode: `1000${i}`,
+    city: "Sample City",
+    state: "SC",
+    country: "CHN",
+    street: `${letter} Street`,
+    number: `${i + 1}`,
+    neighborhood: "Sample Neighborhood",
+    complement: "",
+    reference: null,
+    geoCoordinates: [],
+    selected: false
+  };
+});
 
+// 生成50条A-Z演示联系人数据
+const demoAddressList = Array.from({ length: 50 }, (_, i) => {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const letter = alphabet[i % alphabet.length];
+  return {
+    addressType: 'residential',
+    receiverName: `${letter}erson${i + 1}`,
+    addressId: `${i + 1}`,
+    phone: `1380000${(100 + i).toString().slice(-3)}`,
+    email: `${letter.toLowerCase()}erson${i + 1}@demo.com`,
+    city: 'Sample City',
+    country: 'China',
+    street: `${letter} Street`,
+  };
+});
 
 export default function ShipPage() {
   const { t, currentLanguage } = useTranslation()
@@ -52,7 +91,7 @@ export default function ShipPage() {
     // Package info
     packages: [{
       packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false,
-      needsPallet: false, palletSize: '', sameDayPickup: false
+      needsPallet: false, palletSize: '', sameDayPickup: false, fragile: false
     }],
     
     // Service options
@@ -70,6 +109,10 @@ export default function ShipPage() {
   const [senderAddressBookInput, setSenderAddressBookInput] = useState('')
   const [showSenderContactDropdown, setShowSenderContactDropdown] = useState(false)
   const senderContactInputRef = useRef<HTMLInputElement>(null)
+
+  // 新增：弹窗控制
+  const [showSenderAddressBook, setShowSenderAddressBook] = useState(false);
+  const [showRecipientAddressBook, setShowRecipientAddressBook] = useState(false);
 
   const contactList = [
     { key: 'alice', label: t('contactAliceBerlin') },
@@ -157,109 +200,93 @@ export default function ShipPage() {
     contactInputRef.current?.blur();
   };
 
+  // 1. 伪造50个A-Z联系人
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const fakeContacts = Array.from({ length: 50 }, (_, i) => {
+    const letter = alphabet[i % alphabet.length];
+    return { name: `${letter}erson${i + 1}` };
+  });
+  const contactsByLetter = alphabet.map(letter => ({
+    letter,
+    contacts: fakeContacts.filter(c => c.name[0] === letter)
+  }));
+
+  // 地址簿弹窗外部点击关闭
+  React.useEffect(() => {
+    if (!showContactDropdown) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (contactInputRef.current && !contactInputRef.current.contains(e.target as Node)) {
+        setShowContactDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showContactDropdown]);
+
+  // 监听通讯录弹窗滚动，动态高亮右侧字母索引
+  React.useEffect(() => {
+    if (!showContactDropdown) return;
+    const input = contactInputRef.current as HTMLInputElement | null;
+    if (!input) return;
+    function onScroll() {
+      if (!input) return;
+      const scrollTop = input.scrollTop;
+      let current = 'A';
+      for (let i = 0; i < alphabet.length; i++) {
+        const letter = alphabet[i];
+        const el = document.getElementById(`letter-${letter}`);
+        if (el) {
+          if (el.offsetTop - input.offsetTop <= scrollTop + 10) {
+            current = letter;
+          } else {
+            break;
+          }
+        }
+      }
+      // setActiveLetter(current); // This state is removed
+    }
+    input.addEventListener('scroll', onScroll);
+    return () => {
+      const cleanupInput = contactInputRef.current as HTMLInputElement | null;
+      if (cleanupInput) cleanupInput.removeEventListener('scroll', onScroll);
+    };
+  }, [showContactDropdown, alphabet]);
+
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-900">{t('senderInfo')}</h2>
       </div>
-      
-      {/* 地址簿选择 */}
-      <div className="mb-4 flex gap-4 items-center">
-        <div className="relative w-full flex items-center gap-2">
-          <div className={`relative w-full${currentLanguage === 'zh' ? ' max-w-[260px]' : ''}`}>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <AddressBookIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              ref={senderContactInputRef}
-              type="text"
-              placeholder={t('searchSender')}
-              value={senderAddressBookInput}
-              onFocus={() => setShowSenderContactDropdown(true)}
-              onBlur={() => setTimeout(() => setShowSenderContactDropdown(false), 150)}
-              onChange={e => {
-                const value = e.target.value;
-                setSenderAddressBookInput(value);
-                const sender = senderAddressBook.find(s => s.name === value);
-                if (sender) {
-                  setFormData(prev => ({
-                    ...prev,
-                    senderName: sender.name,
-                    senderEmail: sender.email,
-                    senderPhone: sender.phone,
-                    senderAddress: sender.address,
-                    senderCity: sender.city,
-                    senderPostalCode: sender.postalCode,
-                    senderCountry: sender.country
-                  }));
-                  setUseSenderAddressBook(true);
-                } else {
-                  setUseSenderAddressBook(false);
-                }
-              }}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {showSenderContactDropdown && (
-              <div className={`absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg ${currentLanguage === 'zh' ? 'max-w-[320px]' : 'max-w-[220px]'}`}>
-                {senderAddressBook.map((sender, index) => (
-                  <div
-                    key={index}
-                    className="px-2 py-2 cursor-pointer hover:bg-blue-50 text-gray-900 truncate"
-                    onMouseDown={() => {
-                      setSenderAddressBookInput(sender.name);
-                      setFormData(prev => ({
-                        ...prev,
-                        senderName: sender.name,
-                        senderEmail: sender.email,
-                        senderPhone: sender.phone,
-                        senderAddress: sender.address,
-                        senderCity: sender.city,
-                        senderPostalCode: sender.postalCode,
-                        senderCountry: sender.country
-                      }));
-                      setUseSenderAddressBook(true);
-                    }}
-                  >
-                    {sender.name} ({sender.city})
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <label className="flex items-center ml-2 select-none">
-            <button
-              type="button"
-              className={`text-sm border rounded px-3 py-1 ml-2 ${useSenderAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
-              disabled={!useSenderAddressBook}
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  senderName: '',
-                  senderEmail: '',
-                  senderPhone: '',
-                  senderAddress: '',
-                  senderCity: '',
-                  senderPostalCode: '',
-                  senderCountry: ''
-                }));
-                setSenderAddressBookInput('');
-                setUseSenderAddressBook(false);
-              }}
-            >
-              {t('clear')}
-            </button>
-          </label>
-        </div>
-      </div>
+      {/* 删除原有的姓名输入栏和地址簿按钮行 */}
+      {/* 在下方表单的“姓名”输入框右侧嵌入地址簿按钮 */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
-          <input
-            type="text"
-            value={formData.senderName}
-            onChange={(e) => handleInputChange('senderName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex">
+            <input
+              type="text"
+              value={formData.senderName}
+              onChange={(e) => handleInputChange('senderName', e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <AddressBook
+              addressList={addressList}
+              onSelect={(contact: any) => {
+                setFormData(prev => ({ ...prev, senderName: contact.receiverName }));
+              }}
+              trigger={
+                <button
+                  type="button"
+                  className="border border-l-0 border-gray-300 rounded-r-md bg-white hover:bg-gray-100 flex items-center justify-center w-10"
+                  tabIndex={0}
+                  aria-label={t('addressBook')}
+                  style={{boxShadow: 'none'}}
+                >
+                  <AddressBookIcon className="h-7 w-7" />
+                </button>
+              }
+            />
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
@@ -331,6 +358,17 @@ export default function ShipPage() {
           </label>
         </div>
       </div>
+      {/* 地址簿弹窗：发件人 */}
+      {showSenderAddressBook && (
+        <AddressBook
+          addressList={addressList}
+          onSelect={(contact: any) => {
+            setFormData(prev => ({ ...prev, senderName: contact.receiverName }));
+            setShowSenderAddressBook(false);
+          }}
+          trigger={null}
+        />
+      )}
     </div>
   )
 
@@ -359,64 +397,32 @@ export default function ShipPage() {
         )}
       </div>
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="flex flex-col w-full">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
-          <div className="flex w-full gap-2 relative">
+          <div className="flex">
             <input
               type="text"
               value={formData.recipientName}
               onChange={(e) => handleInputChange('recipientName', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              type="button"
-              className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 ml-1"
-              onClick={() => setShowContactDropdown(v => !v)}
-              tabIndex={0}
-              aria-label={t('addressBook')}
-            >
-              <AddressBookIcon className="h-5 w-5 text-gray-500" />
-              <span className="ml-1 text-sm text-gray-700 hidden sm:inline">{t('addressBook')}</span>
-            </button>
-            <button
-              type="button"
-              className={`text-sm border rounded px-3 py-1 ml-1 ${useAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
-              disabled={!useAddressBook}
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  recipientName: '',
-                  recipientEmail: '',
-                  recipientPhone: '',
-                  recipientAddress: '',
-                  recipientCity: '',
-                  recipientPostalCode: '',
-                  recipientCountry: '',
-                  addressBook: ''
-                }));
-                setUseAddressBook(false);
+            <AddressBook
+              addressList={addressList}
+              onSelect={(contact: any) => {
+                setFormData(prev => ({ ...prev, recipientName: contact.receiverName }));
               }}
-              style={{whiteSpace:'nowrap'}}
-            >
-              {t('clear')}
-            </button>
-            {showContactDropdown && (
-              <div className="absolute left-0 top-full mt-1 w-full z-20 bg-white border border-gray-200 rounded shadow-lg">
-                {contactList.map(contact => (
-                  <div
-                    key={contact.key}
-                    className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
-                    onMouseDown={() => {
-                      handleContactSelect(contact.key);
-                      setUseAddressBook(true);
-                      setShowContactDropdown(false);
-                    }}
-                  >
-                    {contact.label}
-                  </div>
-                ))}
-              </div>
-            )}
+              trigger={
+                <button
+                  type="button"
+                  className="border border-l-0 border-gray-300 rounded-r-md bg-white hover:bg-gray-100 flex items-center justify-center w-10"
+                  tabIndex={0}
+                  aria-label={t('addressBook')}
+                  style={{boxShadow: 'none'}}
+                >
+                  <AddressBookIcon className="h-7 w-7" />
+                </button>
+              }
+            />
           </div>
         </div>
         
@@ -495,6 +501,17 @@ export default function ShipPage() {
           </label>
         </div>
       </div>
+      {/* 地址簿弹窗：收件人 */}
+      {showRecipientAddressBook && (
+        <AddressBook
+          addressList={addressList}
+          onSelect={(contact: any) => {
+            setFormData(prev => ({ ...prev, recipientName: contact.receiverName }));
+            setShowRecipientAddressBook(false);
+          }}
+          trigger={null}
+        />
+      )}
     </div>
   )
 
@@ -538,8 +555,7 @@ export default function ShipPage() {
                   }} className="w-full px-3 py-2 border border-gray-300 rounded-md">
                     <option value="package">{t('package')}</option>
                     <option value="document">{t('document')}</option>
-                    <option value="fragile">{t('fragile')}</option>
-                    <option value="electronics">{t('electronics')}</option>
+                    <option value="pallet">{t('pallet')}</option>
                   </select>
                 </div>
                 <div>
@@ -573,11 +589,62 @@ export default function ShipPage() {
                   </div>
                 </div>
                 <div className="md:col-span-2">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      checked={pkg.fragile || false}
+                      onChange={e => {
+                        const v = e.target.checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          packages: prev.packages.map((p, i) =>
+                            i === idx
+                              ? { ...p, fragile: v }
+                              : { ...p, fragile: typeof p.fragile === 'boolean' ? p.fragile : false }
+                          )
+                        }));
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      id={`fragile-${idx}`}
+                    />
+                    <label htmlFor={`fragile-${idx}`} className="ml-2 text-sm text-gray-700">{t('fragile')}</label>
+                  </div>
+                  {/* 托盘选项上移到此处 */}
+                  <div className="border-t pt-4 pb-2">
+                    <div className="mb-1 text-sm text-gray-700">{t('pleaseSelectPalletSize')}</div>
+                    <div className="flex gap-6">
+                      <label className="flex items-center">
+                        <input type="radio" name={`palletSize${idx}`} value="100x50" checked={pkg.palletSize === '100x50'} onChange={e => {
+                          const v = e.target.value
+                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
+                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                        <span className="ml-2 text-sm text-gray-700">{t('palletSize1')}</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="radio" name={`palletSize${idx}`} value="140x80" checked={pkg.palletSize === '140x80'} onChange={e => {
+                          const v = e.target.value
+                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
+                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+                        <span className="ml-2 text-sm text-gray-700">{t('palletSize2')}</span>
+                      </label>
+                    </div>
+                  </div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
                   <textarea value={pkg.description} onChange={e => {
                     const v = e.target.value
                     setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, description: v } : p) }))
                   }} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  {formData.packages.length < 5 && idx === formData.packages.length - 1 && (
+                    <div className="flex items-center justify-center mt-4">
+                      <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
+                        setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false, fragile: false }] }))
+                        setActivePackageIdx(formData.packages.length)
+                      }}>
+                        <span className="text-2xl mr-2">+</span>
+                        <span className="font-medium text-base">{t('addPackage')} {formData.packages.length + 1}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="border-t pt-6">
@@ -611,7 +678,7 @@ export default function ShipPage() {
                   </div>
                   
                   {/* 板架选项 */}
-                  <div className="border-t pt-4">
+                  {/* <div className="border-t pt-4">
                     <div className="mb-3 font-medium text-gray-700">{t('needPallet')}</div>
                     <div className="flex gap-6 mb-2">
                       <label className="flex items-center">
@@ -646,36 +713,13 @@ export default function ShipPage() {
                         </label>
                       </div>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
           )}
         </div>
       ))}
-      {formData.packages.length < 5 && (
-        <div className="flex items-center justify-center mt-6">
-          <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
-            setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false }] }))
-            setActivePackageIdx(formData.packages.length)
-          }}>
-            <span className="text-2xl mr-2">+</span>
-            <span className="font-medium text-base">{t('addPackage')} {formData.packages.length + 1}</span>
-          </button>
-        </div>
-      )}
-      <div className="mt-8 flex items-start bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <input
-          type="checkbox"
-          checked={formData.delayedPickup}
-          onChange={e => setFormData(prev => ({ ...prev, delayedPickup: e.target.checked }))}
-          className="h-5 w-5 mt-0.5 mr-3"
-        />
-        <div className="text-sm text-yellow-900">
-          <span className="font-bold">{t('delayedPickup')}</span><br />
-          {t('delayedPickupDescription')}
-        </div>
-      </div>
     </div>
   )
 

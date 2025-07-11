@@ -324,6 +324,8 @@ export const translations = {
     totalSpent: 'Total Spent',
     orderSuccessTitle: 'Order Submitted',
     remindSuccessTitle: 'Reminder Sent',
+    remindSent: 'Remind request sent. The admin will process it as soon as possible.',
+    reminded: 'Reminded',
   },
   zh: {
     shipping: '发货',
@@ -652,7 +654,9 @@ export const translations = {
     allTime: '全部',
     totalSpent: '总支出',
     orderSuccessTitle: '下单成功',
-    remindSuccessTitle: '催单已发送',
+    remindSuccessTitle: '已发送催单请求，管理员会尽快处理。',
+    remindSent: '催单请求已发送，管理员会尽快处理。',
+    reminded: '已催单',
   }
 }
 

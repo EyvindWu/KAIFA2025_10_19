@@ -14,37 +14,37 @@ import {
   Share2,
   FileText,
   CreditCard,
-  X
+  X,
+  Bell
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from './utils/translations'
 import { orderList } from './track/history/orderList'
 import { personInfoMap } from './track/detail/[trackingNo]/utils'
 import { buildTimeline } from './track/detail/[trackingNo]/utils'
+import { SystemModal } from './components/ClientProviders';
 
 // Tab按钮统一样式
 const tabBtnClass = 'flex-1 w-1/4 px-6 py-2 font-semibold border-b-2 transition-colors text-center flex items-center justify-center gap-1 text-base h-12'
 
 // 1. 提取渲染条目的函数
-function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, handlePrint: any, handleShare: any) {
-  return mockOrders
-    .filter(order => order.status === 'Pending Pickup' || order.status === 'In Transit')
-    .slice(0, 3)
-    .map((order: any, idx: any) => {
-      // 获取 sender/recipient 名字
-      const summaryMatch = order.summary?.match(/^(.*?) → (.*?)(,|，)(.*)$/);
-      const senderName = summaryMatch ? summaryMatch[1].trim() : '-';
-      const recipientName = summaryMatch ? summaryMatch[2].split(',')[0].trim() : '-';
-      const senderCity = personInfoMap[senderName]?.city || '-';
-      const recipientCity = personInfoMap[recipientName]?.city || '-';
-      // 包裹数量假设为1
-      const packageCount = 1;
-      // 创建时间：取 timeline 中 status 为 'Order Placed' 的时间
-      const timeline = buildTimeline(order.status);
-      const orderPlaced = timeline.find((item: any) => item.status === 'Order Placed');
-      const createdAt = orderPlaced ? orderPlaced.time : '-';
-      return (
-        <div key={order.id} className="relative group p-6 rounded-xl border-2 bg-white hover:shadow-xl transition-all duration-300 flex flex-col gap-2">
+function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, handlePrint: any, handleShare: any, handleRemind: any, remindDisabledMap: any, printDisabledMap: any, remindSentMap: any, onRemindClick: any) {
+  return mockOrders.map((order: any, idx: any) => {
+    const isRemindDisabled = remindDisabledMap[order.id];
+    const isPrintDisabled = printDisabledMap[order.id];
+    const isRemindSent = remindSentMap[order.id];
+    // 解析发件人/收件人
+    const summaryMatch = order.summary?.match(/^(.*?) → (.*?)(,|，)(.*)$/);
+    const senderName = summaryMatch ? summaryMatch[1].trim() : '-';
+    const recipientName = summaryMatch ? summaryMatch[2].split(',')[0].trim() : '-';
+    const senderCity = personInfoMap[senderName]?.city || '-';
+    const recipientCity = personInfoMap[recipientName]?.city || '-';
+    // 包裹数量和创建时间
+    const packageCount = order.packageCount || 1;
+    const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-';
+
+    return (
+      <div key={order.id} className="relative group p-6 rounded-xl border-2 bg-white hover:shadow-xl transition-all duration-300 flex flex-col gap-2">
           {/* 第一行：ICON、单号、状态标签 */}
           <div className="flex items-center gap-2 flex-nowrap">
             <Truck className="h-6 w-6 text-blue-600" />
@@ -74,26 +74,53 @@ function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, h
             <Link href={`/track/detail/${order.id}`} className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold text-sm hover:bg-blue-100 transition-colors text-center">{t('view_all_info')}</Link>
             <button
               onClick={() => handlePrint(order)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 cursor-pointer border-0 outline-none font-semibold"
+              className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isPrintDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
               title={t('downloadPdf')}
               type="button"
+              disabled={isPrintDisabled}
             >
               <Printer className="h-5 w-5" />
               <span className="hidden sm:inline">Print</span>
             </button>
             <button
               onClick={e => handleShare(order, e)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 cursor-pointer border-0 outline-none font-semibold share-btn"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn"
               title={t('share')}
               type="button"
             >
               <Share2 className="h-5 w-5" />
               <span className="hidden sm:inline">Share</span>
             </button>
+            <button
+              onClick={() => onRemindClick(order)}
+              className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isRemindDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+              title={t('remind')}
+              type="button"
+              disabled={isRemindDisabled}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="hidden sm:inline">{isRemindSent ? t('reminded') : t('remind')}</span>
+            </button>
           </div>
         </div>
       );
     });
+}
+
+// 新增分页和7天筛选逻辑
+function getRecentOrders(orders: any[], days = 7) {
+  const now = new Date();
+  // 先筛选7天内
+  const filtered = orders.filter(order => {
+    if (!order.createdAt) return false;
+    const created = new Date(order.createdAt);
+    return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) < days;
+  });
+  // 优先Pending Pickup，再In Transit，队列内按时间倒序
+  const pending = filtered.filter(o => o.status === 'Pending Pickup').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const inTransit = filtered.filter(o => o.status === 'In Transit').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const others = filtered.filter(o => o.status !== 'Pending Pickup' && o.status !== 'In Transit').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [...pending, ...inTransit, ...others];
 }
 
 export default function HomePage() {
@@ -107,6 +134,9 @@ export default function HomePage() {
   const [sharePopoverPos, setSharePopoverPos] = useState<{top: number, left: number} | null>(null)
   const router = useRouter()
   const { t } = useTranslation()
+  const [remindSentMap, setRemindSentMap] = useState<{[id: string]: boolean}>({});
+  const [showRemindModal, setShowRemindModal] = useState(false);
+  const [remindModalMsg, setRemindModalMsg] = useState('');
 
   // mockOrders同步为Order History的orderList
   const mockOrders = orderList
@@ -295,6 +325,34 @@ export default function HomePage() {
     setPendingPrintOrder(null);
   };
 
+  const [printSharePage, setPrintSharePage] = useState(1);
+  const ordersPerPage = 5;
+  const recentOrders = getRecentOrders(orderList, 7);
+  const totalPrintSharePages = Math.ceil(recentOrders.length / ordersPerPage);
+  const pagedOrders = recentOrders.slice((printSharePage - 1) * ordersPerPage, printSharePage * ordersPerPage);
+
+  const handleRemind = (order: any) => {
+    // 可复用 dashboard 的提醒逻辑
+    const reminders = JSON.parse(localStorage.getItem('kaifa-reminders') || '[]');
+    reminders.push({
+      id: order.id,
+      summary: order.summary,
+      time: new Date().toISOString(),
+    });
+    localStorage.setItem('kaifa-reminders', JSON.stringify(reminders));
+    alert(t('remindSent'));
+  };
+
+  const onRemindClick = (order: any) => {
+    setRemindSentMap(prev => ({ ...prev, [order.id]: true }));
+    setRemindModalMsg(t('remindSent'));
+    setShowRemindModal(true);
+  };
+
+  // 判断哪些订单不能催单/打印
+  const remindDisabledMap = Object.fromEntries(pagedOrders.map(order => [order.id, ['In Transit', 'Delivered', 'Cancelled'].includes(order.status) || remindSentMap[order.id]]));
+  const printDisabledMap = Object.fromEntries(pagedOrders.map(order => [order.id, ['Pending Pickup', 'Cancelled'].includes(order.status) ? false : true]));
+
   return (
     <div className="min-h-screen bg-[#f6f8fa] max-w-7xl mx-auto px-4 py-8">
       {/* Quick Actions Section - Tabs */}
@@ -373,7 +431,16 @@ export default function HomePage() {
                         <h3 className="text-xl font-bold text-gray-800 mb-2">{t('recentOrders')}</h3>
                       </div>
                       <div className="space-y-6">
-                        {renderPrintShareOrders(mockOrders, personInfoMap, t, handlePrint, handleShare)}
+                        {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, remindSentMap, onRemindClick)}
+                      </div>
+                      {/* 分页器和查看全部按钮 */}
+                      <div className="flex flex-col md:flex-row items-center justify-between mt-6 gap-2">
+                        <div className="flex gap-2">
+                          <button disabled={printSharePage === 1} onClick={() => setPrintSharePage(p => Math.max(1, p - 1))} className="px-3 py-1 rounded bg-gray-100 text-gray-700 disabled:opacity-50">&lt;</button>
+                          <span>{printSharePage} / {totalPrintSharePages}</span>
+                          <button disabled={printSharePage === totalPrintSharePages} onClick={() => setPrintSharePage(p => Math.min(totalPrintSharePages, p + 1))} className="px-3 py-1 rounded bg-gray-100 text-gray-700 disabled:opacity-50">&gt;</button>
+                        </div>
+                        <button onClick={() => router.push('/track/history')} className="mt-2 md:mt-0 px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">{t('viewAllOrders')}</button>
                       </div>
                     </div>
                   )}
@@ -439,10 +506,17 @@ export default function HomePage() {
               {activeTab === 'printShare' && (
                 <div className="bg-white rounded-b-lg shadow-md p-4 w-full transition-all duration-300 transform animate-slide-in-down">
                   <div className="mb-4 text-center font-semibold text-gray-700">{t('recentOrders')}</div>
-                  
                   {/* 移动端：订单列表，每个条目后紧跟其详情框 */}
                   <div className="space-y-3">
-                    {renderPrintShareOrders(mockOrders, personInfoMap, t, handlePrint, handleShare)}
+                    {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, remindSentMap, onRemindClick)}
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
+                    <div className="flex gap-2">
+                      <button disabled={printSharePage === 1} onClick={() => setPrintSharePage(p => Math.max(1, p - 1))} className="px-3 py-1 rounded bg-gray-100 text-gray-700 disabled:opacity-50">&lt;</button>
+                      <span>{printSharePage} / {totalPrintSharePages}</span>
+                      <button disabled={printSharePage === totalPrintSharePages} onClick={() => setPrintSharePage(p => Math.min(totalPrintSharePages, p + 1))} className="px-3 py-1 rounded bg-gray-100 text-gray-700 disabled:opacity-50">&gt;</button>
+                    </div>
+                    <button onClick={() => router.push('/track/history')} className="mt-2 sm:mt-0 px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">{t('viewAllOrders')}</button>
                   </div>
                 </div>
               )}
@@ -559,6 +633,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      <SystemModal open={showRemindModal} onClose={() => setShowRemindModal(false)} message={remindModalMsg} />
     </div>
   )
 } 

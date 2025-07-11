@@ -2,91 +2,9 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { orderList } from './orderList';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, Bell } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
-
-const orderList = [
-  {
-    id: '1Z999AA10123456795',
-    status: 'Pending Pickup',
-    summary: 'Andy Liu → Xavier, 1.8kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456794',
-    status: 'Pending Pickup',
-    summary: 'Andy Liu → Victor, 2.1kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456793',
-    status: 'In Transit',
-    summary: 'Andy Liu → Tina, 3.5kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456792',
-    status: 'In Transit',
-    summary: 'Andy Liu → Rose, 0.6kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456791',
-    status: 'Delivered',
-    summary: 'Andy Liu → Paul, 1.9kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456790',
-    status: 'Delivered',
-    summary: 'Andy Liu → Noah, 2.8kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456789',
-    status: 'Delivered',
-    summary: 'Andy Liu → Leo, 1.5kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456788',
-    status: 'Delivered',
-    summary: 'Andy Liu → Jack, 4.2kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456787',
-    status: 'Delivered',
-    summary: 'Andy Liu → Henry, 0.8kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456786',
-    status: 'Delivered',
-    summary: 'Andy Liu → Frank, 3.1kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456785',
-    status: 'Delivered',
-    summary: 'Andy Liu → Dave, 1.2kg, Standard',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456784',
-    status: 'Delivered',
-    summary: 'Andy Liu → Bob, 2.5kg, Express',
-    href: '/track/detail'
-  },
-  {
-    id: '1Z999AA10123456783',
-    status: 'Cancelled',
-    summary: 'Andy Liu → Lily, 2.0kg, Standard',
-    href: '/track/detail',
-    recipient: 'Lily',
-    createdAt: '2024-05-01',
-  },
-];
 
 const statusOptions = [
   { value: 'All', label: 'All', color: 'bg-gray-100 text-gray-700' },
@@ -172,6 +90,8 @@ export default function OrderHistory() {
         return 'bg-blue-100 text-blue-700';
       case 'Pending Pickup':
         return 'bg-yellow-100 text-yellow-700';
+      case 'Cancelled':
+        return 'bg-gray-300 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -355,33 +275,16 @@ export default function OrderHistory() {
         <div className="bg-blue-50 rounded-xl mb-6">
           <div className="border-t border-gray-200"></div>
           <ul className="divide-y divide-gray-200 bg-white rounded-xl">
-          {currentOrders.map(order => (
-            <li key={order.id} className="relative">
-              <div className="flex flex-col gap-1 py-4 px-2 hover:bg-blue-50 transition-colors">
-                <span className={`absolute right-4 top-0 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10 rounded`}>{t(statusKeyMap[order.status] || order.status)}</span>
-                <span className="font-mono text-base text-gray-800 mb-1 block">{order.id}</span>
-                <div className="flex items-center text-sm text-gray-500 mb-1">
-                  <span className="truncate flex-1">{(() => {
-                    const parts = order.summary.split(',');
-                    if (parts.length === 3) {
-                      const [names, weight, service] = parts;
-                      return `${names},${weight},${t(serviceTypeKeyMap[service.trim()] || service.trim())}`;
-                    }
-                    return order.summary;
-                  })()}</span>
-                  {order.status === 'Pending Pickup' && (
-                    <button
-                      className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1 ml-3"
-                      style={{ minWidth: '96px', alignSelf: 'flex-start', marginRight: '0.5rem' }}
-                      onClick={() => handleRemind(order)}
-                    >
-                      <Bell className="h-4 w-4 mr-1" />
-                      {t('remind')}
-                    </button>
-                  )}
+          {currentOrders.map((order, idx) => (
+            <Link key={order.id} href={`/track/detail/${order.id}`} className="block group">
+              <div className="flex items-center justify-between p-4 border-b hover:bg-blue-50 transition-colors cursor-pointer">
+                <div>
+                  <div className="font-mono text-base text-blue-700 font-bold group-hover:underline">{order.id}</div>
+                  <div className="text-sm text-gray-700">{order.summary}</div>
                 </div>
+                <span className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(order.status)}`}>{t(statusKeyMap[order.status] || order.status)}</span>
               </div>
-            </li>
+            </Link>
           ))}
         </ul>
         </div>
