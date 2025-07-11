@@ -280,14 +280,6 @@ export default function LoginPage() {
           </form>
 
           {/* Demo Accounts Info */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">{t('quickLoginTips')}</h3>
-            <div className="space-y-2 text-xs text-gray-600">
-              <div>{t('quickLoginTip1')}</div>
-              <div>{t('quickLoginTip2')}</div>
-              <div>{t('quickLoginTip3')}</div>
-            </div>
-          </div>
 
           {/* Links */}
           <div className="mt-6 text-center">

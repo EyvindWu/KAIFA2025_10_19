@@ -112,6 +112,7 @@ export default function ShipPage() {
 
   const [selectedSenderIndex, setSelectedSenderIndex] = useState(-1);
   const [saveToAddressBook, setSaveToAddressBook] = useState(false);
+  const [showKfTooltip, setShowKfTooltip] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -338,51 +339,46 @@ export default function ShipPage() {
       </div>
       <div className="mb-2 flex gap-4 relative items-center">
         <input type="text" placeholder={t('enterKFCode')} value={formData.kfCode} onChange={e => setFormData(prev => ({ ...prev, kfCode: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-md" />
-        <div className="flex-1 relative flex items-center gap-2">
-          <div className={`relative w-full${currentLanguage === 'zh' ? ' max-w-[260px]' : ''}`}>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <AddressBookIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              ref={contactInputRef}
-              type="text"
-              placeholder={t('searchRecipient')}
-              value={formData.addressBook}
-              onFocus={() => setShowContactDropdown(true)}
-              onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
-              onChange={e => {
-                const value = e.target.value;
-                setFormData(prev => ({ ...prev, addressBook: value }));
-                if (addressBookData[value]) {
-                  setFormData(prev => ({ ...prev, ...addressBookData[value] }));
-                  setUseAddressBook(true);
-                } else {
-                  setUseAddressBook(false);
-                }
-              }}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {showContactDropdown && (
-              <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg">
-                {contactList.map(contact => (
-                  <div
-                    key={contact.key}
-                    className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
-                    onMouseDown={() => {
-                      handleContactSelect(contact.key);
-                      setUseAddressBook(true);
-                    }}
-                  >
-                    {contact.label}
-                  </div>
-                ))}
-              </div>
-            )}
+        <button
+          type="button"
+          className="ml-2 flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 text-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          onClick={() => setShowKfTooltip(v => !v)}
+          tabIndex={0}
+          aria-label="KF代码说明"
+        >
+          <span className="font-bold text-lg">?</span>
+        </button>
+        {showKfTooltip && (
+          <div className="absolute left-0 top-full mt-2 w-max max-w-xs bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm rounded p-3 shadow-lg z-30"
+            style={{minWidth: '220px'}}>
+            KF代码是由系统根据你填写的信息自动生成的唯一编号。它可以保存并快速填充收/发件人信息，方便下次使用。
+            <button className="absolute top-1 right-2 text-yellow-500 hover:text-yellow-700" onClick={() => setShowKfTooltip(false)} aria-label="关闭">×</button>
           </div>
-          <label className="flex items-center ml-2 select-none">
+        )}
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="flex flex-col w-full">
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
+          <div className="flex w-full gap-2 relative">
+            <input
+              type="text"
+              value={formData.recipientName}
+              onChange={(e) => handleInputChange('recipientName', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <button
               type="button"
-              className={`text-sm border rounded px-3 py-1 ml-2 ${useAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
+              className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 ml-1"
+              onClick={() => setShowContactDropdown(v => !v)}
+              tabIndex={0}
+              aria-label={t('addressBook')}
+            >
+              <AddressBookIcon className="h-5 w-5 text-gray-500" />
+              <span className="ml-1 text-sm text-gray-700 hidden sm:inline">{t('addressBook')}</span>
+            </button>
+            <button
+              type="button"
+              className={`text-sm border rounded px-3 py-1 ml-1 ${useAddressBook ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-gray-400 border-gray-100 cursor-not-allowed'}`}
               disabled={!useAddressBook}
               onClick={() => {
                 setFormData(prev => ({
@@ -398,21 +394,28 @@ export default function ShipPage() {
                 }));
                 setUseAddressBook(false);
               }}
+              style={{whiteSpace:'nowrap'}}
             >
               {t('clear')}
             </button>
-          </label>
-        </div>
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
-          <input
-            type="text"
-            value={formData.recipientName}
-            onChange={(e) => handleInputChange('recipientName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            {showContactDropdown && (
+              <div className="absolute left-0 top-full mt-1 w-full z-20 bg-white border border-gray-200 rounded shadow-lg">
+                {contactList.map(contact => (
+                  <div
+                    key={contact.key}
+                    className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-900"
+                    onMouseDown={() => {
+                      handleContactSelect(contact.key);
+                      setUseAddressBook(true);
+                      setShowContactDropdown(false);
+                    }}
+                  >
+                    {contact.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         
         <div>

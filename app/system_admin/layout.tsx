@@ -50,6 +50,14 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar 灯箱遮罩 */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar overlay"
+        />
+      )}
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:z-auto`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -73,6 +81,7 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
                 key={item.name}
                 href={item.href}
                 className="group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                onClick={() => setSidebarOpen(false)}
               >
                 <item.icon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-600" />
                 {item.name}
@@ -97,7 +106,10 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
               </p>
             </div>
             <button
-              onClick={logout}
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
               className="ml-2 p-1 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
             >
               <LogOut className="h-4 w-4" />
@@ -139,7 +151,7 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
             </div>
           </div>
         </div>
-        <main>{children}</main>
+        <main onClick={() => sidebarOpen && setSidebarOpen(false)}>{children}</main>
       </div>
     </div>
   )

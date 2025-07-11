@@ -30,6 +30,9 @@ export default function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const { t } = useTranslation()
 
+  const [mobileTrackingMenuOpen, setMobileTrackingMenuOpen] = useState(false);
+  const [mobileSupportMenuOpen, setMobileSupportMenuOpen] = useState(false);
+
   // Get browser language and set initial language
   useEffect(() => {
     const getBrowserLanguage = () => {
@@ -297,7 +300,7 @@ export default function Header() {
               )}
             </button>
             {isUserDropdownOpen && (
-              <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+              <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[100]">
                 <div className="py-1">
                   {isAuthenticated ? (
                     <>
@@ -380,22 +383,46 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
           <div className="px-4 py-6 space-y-4">
-            {/* 功能按钮组 */}
+            {/* 功能按钮组 - 优先级高，视觉突出 */}
             <div className="flex flex-col gap-2 pb-4 border-b border-gray-200">
-              <Link href="/ship" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('shipping')}</Link>
-              <Link href="/track" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('tracking')}</Link>
-              <Link href="/support/contact" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('support')}</Link>
+              <Link href="/ship" className="w-full text-left px-3 py-3 rounded text-blue-700 bg-blue-50 font-bold text-base hover:bg-blue-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('shipping')}</Link>
+              <button
+                className="w-full text-left px-3 py-3 rounded text-blue-700 bg-blue-50 font-bold text-base hover:bg-blue-100 transition-colors flex items-center justify-between"
+                onClick={() => setMobileTrackingMenuOpen(v => !v)}
+              >
+                {t('tracking')}
+                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${mobileTrackingMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {mobileTrackingMenuOpen && (
+                <div className="ml-2 mb-2 flex flex-col gap-1">
+                  <Link href="/track" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-blue-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('track')}</Link>
+                  <Link href="/track/history" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-blue-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('orderHistory')}</Link>
+                </div>
+              )}
+              <button
+                className="w-full text-left px-3 py-3 rounded text-blue-700 bg-blue-50 font-bold text-base hover:bg-blue-100 transition-colors flex items-center justify-between"
+                onClick={() => setMobileSupportMenuOpen(v => !v)}
+              >
+                {t('support')}
+                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${mobileSupportMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {mobileSupportMenuOpen && (
+                <div className="ml-2 mb-2 flex flex-col gap-1">
+                  <Link href="/support/contact" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-blue-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('contactCustomerService')}</Link>
+                  <Link href="/support/guide" className="w-full text-left px-3 py-2 rounded text-gray-700 hover:bg-blue-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>{t('guide')}</Link>
+                </div>
+              )}
             </div>
 
-            {/* Language Selector - 移动端显示，仅 en/zh/it */}
-            <div className="pb-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-3">{t('language')}</h3>
+            {/* Language Selector - 优先级低，视觉弱化 */}
+            <div className="pb-4 border-b border-gray-200 opacity-80">
+              <h3 className="font-semibold text-gray-500 mb-3">{t('language')}</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(languages.filter((lang: { code: string }) => ['en','zh','it'].includes(lang.code)) as { code: string; name: string; flag: string }[]).map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`flex items-center px-3 py-2 text-sm rounded transition-colors ${currentLanguage === lang.code ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-50'}`}
+                    className={`flex items-center px-3 py-2 text-sm rounded transition-colors ${currentLanguage === lang.code ? 'bg-blue-100 text-blue-700 font-bold' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'}`}
                   >
                     <span className="mr-2">{lang.flag}</span>
                     {lang.name}

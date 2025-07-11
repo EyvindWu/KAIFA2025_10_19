@@ -44,6 +44,34 @@ export default function UserDashboard() {
     { name: t('totalSpent'), value: '€1,234', icon: Euro, color: 'purple' }
   ]
 
+  // 快捷操作区块功能配置
+  const quickActions = [
+    {
+      key: 'ship',
+      href: '/ship',
+      icon: Plus,
+      title: t('createShipment'),
+      desc: t('sendNewPackage'),
+      enabled: true
+    },
+    {
+      key: 'track',
+      href: '/track',
+      icon: Truck,
+      title: t('trackPackage'),
+      desc: t('checkDeliveryStatus'),
+      enabled: true
+    },
+    {
+      key: 'billing',
+      href: '/billing',
+      icon: Euro,
+      title: t('viewBilling'),
+      desc: t('managePayments'),
+      enabled: false // 未开发，禁用
+    }
+  ];
+
   const recentOrders = [
     {
       id: '1Z999AA10123456795',
@@ -166,36 +194,33 @@ export default function UserDashboard() {
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link
-                href="/ship"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Plus className="h-6 w-6 text-blue-600 mr-3" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">{t('createShipment')}</p>
-                  <p className="text-xs text-gray-500">{t('sendNewPackage')}</p>
-                </div>
-              </Link>
-              <Link
-                href="/track"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Truck className="h-6 w-6 text-green-600 mr-3" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">{t('trackPackage')}</p>
-                  <p className="text-xs text-gray-500">{t('checkDeliveryStatus')}</p>
-                </div>
-              </Link>
-              <Link
-                href="/billing"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Euro className="h-6 w-6 text-purple-600 mr-3" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">{t('viewBilling')}</p>
-                  <p className="text-xs text-gray-500">{t('managePayments')}</p>
-                </div>
-              </Link>
+              {quickActions.map(action => {
+                const Icon = action.icon;
+                return action.enabled ? (
+                  <Link
+                    key={action.key}
+                    href={action.href}
+                    className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Icon className={`h-6 w-6 mr-3 ${action.key === 'ship' ? 'text-blue-600' : action.key === 'track' ? 'text-green-600' : 'text-purple-600'}`} />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">{action.title}</p>
+                      <p className="text-xs text-gray-500">{action.desc}</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <div
+                    key={action.key}
+                    className="flex items-center p-4 border border-gray-200 rounded-lg bg-gray-100 opacity-50 cursor-not-allowed select-none"
+                  >
+                    <Icon className={`h-6 w-6 mr-3 ${action.key === 'ship' ? 'text-blue-600' : action.key === 'track' ? 'text-green-600' : 'text-purple-600'}`} />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">{action.title}</p>
+                      <p className="text-xs text-gray-500">{action.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

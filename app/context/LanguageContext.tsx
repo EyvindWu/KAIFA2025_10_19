@@ -655,7 +655,7 @@ export const translations = {
 export const LanguageContext = createContext<any>(null)
 
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
-  const [currentLanguage, setCurrentLanguage] = useState('en')
+  const [currentLanguage, setCurrentLanguage] = useState('zh')
   const [isLanguageLoaded, setIsLanguageLoaded] = useState(false)
 
   useEffect(() => {
