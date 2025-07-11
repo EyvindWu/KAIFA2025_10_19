@@ -91,7 +91,7 @@ export default function ShipPage() {
     // Package info
     packages: [{
       packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false,
-      needsPallet: false, palletSize: '', sameDayPickup: false, fragile: false
+      fragile: false
     }],
     
     // Service options
@@ -555,7 +555,6 @@ export default function ShipPage() {
                   }} className="w-full px-3 py-2 border border-gray-300 rounded-md">
                     <option value="package">{t('package')}</option>
                     <option value="document">{t('document')}</option>
-                    <option value="pallet">{t('pallet')}</option>
                   </select>
                 </div>
                 <div>
@@ -609,42 +608,6 @@ export default function ShipPage() {
                     />
                     <label htmlFor={`fragile-${idx}`} className="ml-2 text-sm text-gray-700">{t('fragile')}</label>
                   </div>
-                  {/* 托盘选项上移到此处 */}
-                  <div className="border-t pt-4 pb-2">
-                    <div className="mb-1 text-sm text-gray-700">{t('pleaseSelectPalletSize')}</div>
-                    <div className="flex gap-6">
-                      <label className="flex items-center">
-                        <input type="radio" name={`palletSize${idx}`} value="100x50" checked={pkg.palletSize === '100x50'} onChange={e => {
-                          const v = e.target.value
-                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
-                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                        <span className="ml-2 text-sm text-gray-700">{t('palletSize1')}</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="radio" name={`palletSize${idx}`} value="140x80" checked={pkg.palletSize === '140x80'} onChange={e => {
-                          const v = e.target.value
-                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
-                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                        <span className="ml-2 text-sm text-gray-700">{t('palletSize2')}</span>
-                      </label>
-                    </div>
-                  </div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
-                  <textarea value={pkg.description} onChange={e => {
-                    const v = e.target.value
-                    setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, description: v } : p) }))
-                  }} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                  {formData.packages.length < 5 && idx === formData.packages.length - 1 && (
-                    <div className="flex items-center justify-center mt-4">
-                      <button type="button" className="flex items-center px-5 py-2 bg-green-500 text-white text-lg rounded-full shadow-lg hover:bg-green-600 focus:outline-none" onClick={() => {
-                        setFormData(prev => ({ ...prev, packages: [...prev.packages, { packageType: 'package', weight: '', length: '', width: '', height: '', description: '', serviceType: 'standard', insurance: false, needsPallet: false, palletSize: '', sameDayPickup: false, fragile: false }] }))
-                        setActivePackageIdx(formData.packages.length)
-                      }}>
-                        <span className="text-2xl mr-2">+</span>
-                        <span className="font-medium text-base">{t('addPackage')} {formData.packages.length + 1}</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="border-t pt-6">
@@ -676,44 +639,6 @@ export default function ShipPage() {
                       <span className="ml-2 text-sm text-gray-700">{t('addInsuranceCoverage')}</span>
                     </label>
                   </div>
-                  
-                  {/* 板架选项 */}
-                  {/* <div className="border-t pt-4">
-                    <div className="mb-3 font-medium text-gray-700">{t('needPallet')}</div>
-                    <div className="flex gap-6 mb-2">
-                      <label className="flex items-center">
-                        <input type="radio" name={`needsPallet${idx}`} value="yes" checked={pkg.needsPallet === true} onChange={() => {
-                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, needsPallet: true } : p) }))
-                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                        <span className="ml-2 text-sm text-black">{currentLanguage === 'zh' ? '是' : t('yes')}</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="radio" name={`needsPallet${idx}`} value="no" checked={pkg.needsPallet === false} onChange={() => {
-                          setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, needsPallet: false, palletSize: '' } : p) }))
-                        }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                        <span className="ml-2 text-sm text-black">{currentLanguage === 'zh' ? '否' : t('no')}</span>
-                      </label>
-                    </div>
-                    {pkg.needsPallet === true && (
-                      <div className="ml-6 space-y-2">
-                        <div className="mb-1 text-sm text-gray-700">{t('pleaseSelectPalletSize')}</div>
-                        <label className="flex items-center">
-                          <input type="radio" name={`palletSize${idx}`} value="100x50" checked={pkg.palletSize === '100x50'} onChange={e => {
-                            const v = e.target.value
-                            setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
-                          }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                          <span className="ml-2 text-sm text-gray-700">{t('palletSize1')}</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="radio" name={`palletSize${idx}`} value="140x80" checked={pkg.palletSize === '140x80'} onChange={e => {
-                            const v = e.target.value
-                            setFormData(prev => ({ ...prev, packages: prev.packages.map((p, i) => i === idx ? { ...p, palletSize: v } : p) }))
-                          }} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                          <span className="ml-2 text-sm text-gray-700">{t('palletSize2')}</span>
-                        </label>
-                      </div>
-                    )}
-                  </div> */}
                 </div>
               </div>
             </div>
@@ -853,12 +778,6 @@ export default function ShipPage() {
                 <span className="text-gray-600">{t('insurance')}:</span>
                 <span className="ml-2 font-medium text-gray-900">{pkg.insurance ? t('yes') + ' (+€5.99)' : t('no')}</span>
               </div>
-              {pkg.needsPallet && (
-                <div>
-                  <span className="text-gray-600">{t('pallet')}:</span>
-                  <span className="ml-2 font-medium text-gray-900">{pkg.palletSize === '100x50' ? t('palletSize1') : t('palletSize2')}</span>
-                </div>
-              )}
             </div>
           </div>
         ))}
