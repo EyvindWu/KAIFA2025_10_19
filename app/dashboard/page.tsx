@@ -13,7 +13,10 @@ import {
   MapPin,
   Plus,
   ArrowLeft,
-  Bell
+  Bell,
+  Search,
+  User as UserIcon,
+  FileText
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslation } from '../utils/translations';
@@ -24,6 +27,9 @@ export default function UserDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { t } = useTranslation();
   const [showRemindSuccess, setShowRemindSuccess] = useState(false);
+  const [showMonthlyModal, setShowMonthlyModal] = useState(false);
+  const [monthlyForm, setMonthlyForm] = useState({ name: user?.name || '', phone: '', piva: '', email: user?.email || '' });
+  const [monthlyStatus, setMonthlyStatus] = useState('');
 
   // 检查权限
   useEffect(() => {
@@ -38,15 +44,15 @@ export default function UserDashboard() {
     }
   }, [isAuthenticated, user, isLoading, router])
 
-  // 统计卡片多语言
-  const userStats = [
-    { name: t('totalOrders'), value: '23', icon: Package, color: 'blue' },
-    { name: t('inTransit'), value: '5', icon: Truck, color: 'yellow' },
-    { name: t('delivered'), value: '18', icon: CheckCircle, color: 'green' },
-    { name: t('totalSpent'), value: '€1,234', icon: Euro, color: 'purple' }
-  ]
+  // 模拟动态获取统计数据
+  const [userStats, setUserStats] = useState([
+    { name: t('totalOrders'), value: 23, icon: Package, color: 'blue', href: '/orders' },
+    { name: t('inTransit'), value: 5, icon: Truck, color: 'yellow', href: '/orders?status=in-transit' },
+    { name: t('delivered'), value: 18, icon: CheckCircle, color: 'green', href: '/orders?status=delivered' },
+    { name: t('totalSpent'), value: '€1,234', icon: Euro, color: 'purple', href: '/billing' }
+  ]);
 
-  // 快捷操作区块功能配置
+  // 快捷操作区全部可用
   const quickActions = [
     {
       key: 'ship',
@@ -70,7 +76,7 @@ export default function UserDashboard() {
       icon: Euro,
       title: t('viewBilling'),
       desc: t('managePayments'),
-      enabled: false // 未开发，禁用
+      enabled: true
     }
   ];
 
@@ -131,6 +137,22 @@ export default function UserDashboard() {
     setShowRemindSuccess(true);
   };
 
+  // 最近订单筛选/搜索
+  const [orderSearch, setOrderSearch] = useState('');
+  const filteredOrders = recentOrders.filter(order =>
+    order.id.includes(orderSearch) || order.summary.toLowerCase().includes(orderSearch.toLowerCase())
+  );
+  // 月结账单状态（假数据）
+  const monthlyBillingStatus = '待审核'; // 可为“已开通”、“待审核”、“未开通”
+
+  // 检查本地storage是否有申请
+  useEffect(() => {
+    const reqs = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
+    const myReq = reqs.find((r: any) => r.email === user?.email);
+    if (myReq) setMonthlyStatus(myReq.status);
+    else setMonthlyStatus('');
+  }, [user]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -154,23 +176,79 @@ export default function UserDashboard() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6 flex items-center">
-            <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
-              <ArrowLeft className="h-5 w-5 mr-1" />
-              {t('backToHome')}
+          <div className="py-6 flex items-center justify-between">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
+                <ArrowLeft className="h-5 w-5 mr-1" />
+                {t('backToHome')}
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900">{t('welcomeBack')}, {user.name}!</h1>
+            </div>
+            {/* 个人资料快捷入口 */}
+            <Link href="/profile" className="flex items-center gap-1 text-blue-600 hover:underline">
+              <UserIcon className="h-5 w-5" /> {t('profile')}
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">{t('welcomeBack')}, {user.name}!</h1>
           </div>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 月结申请按钮和弹窗 */}
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5 text-yellow-600" />
+          <span className="text-sm font-medium text-gray-700">月结账单状态：</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${monthlyStatus==='approved'?'bg-green-100 text-green-700':monthlyStatus==='pending'?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-700'}`}>{monthlyStatus==='approved'?'已开通':monthlyStatus==='pending'?'待审核':'未开通'}</span>
+          {monthlyStatus !== 'approved' && (
+            <button className="ml-4 flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs" onClick={()=>setShowMonthlyModal(true)}>
+              <Plus className="h-4 w-4" /> 申请月结
+            </button>
+          )}
+        </div>
+        {showMonthlyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={()=>setShowMonthlyModal(false)}>×</button>
+              <h2 className="text-lg font-bold mb-4">申请月结</h2>
+              <form onSubmit={e => {
+                e.preventDefault();
+                const reqs = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
+                reqs.push({ ...monthlyForm, email: user?.email, status: 'pending', id: Date.now() });
+                localStorage.setItem('kaifa-monthly-requests', JSON.stringify(reqs));
+                setShowMonthlyModal(false);
+                setMonthlyStatus('pending');
+              }}>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">姓名</label>
+                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.name} onChange={e=>setMonthlyForm(f=>({...f, name: e.target.value}))} required />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">电话号</label>
+                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.phone} onChange={e=>setMonthlyForm(f=>({...f, phone: e.target.value}))} required />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">P.IVA</label>
+                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.piva} onChange={e=>setMonthlyForm(f=>({...f, piva: e.target.value}))} required />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">邮箱号</label>
+                  <input className="w-full border px-3 py-2 rounded bg-gray-100" value={user?.email||''} disabled />
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">提交申请</button>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* 月结账单状态 */}
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5 text-yellow-600" />
+          <span className="text-sm font-medium text-gray-700">月结账单状态：</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${monthlyBillingStatus==='已开通'?'bg-green-100 text-green-700':monthlyBillingStatus==='待审核'?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-700'}`}>{monthlyBillingStatus}</span>
+        </div>
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {userStats.map((stat) => {
             const Icon = stat.icon
             return (
-              <div key={stat.name} className="bg-white rounded-lg shadow p-6">
+              <Link key={stat.name} href={stat.href} className="bg-white rounded-lg shadow p-6 block hover:bg-blue-50 transition">
                 <div className="flex items-center">
                   <div className={`p-2 rounded-lg ${
                     stat.color === 'blue' ? 'bg-blue-100' :
@@ -190,11 +268,10 @@ export default function UserDashboard() {
                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
-
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -204,7 +281,7 @@ export default function UserDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {quickActions.map(action => {
                 const Icon = action.icon;
-                return action.enabled ? (
+                return (
                   <Link
                     key={action.key}
                     href={action.href}
@@ -216,30 +293,29 @@ export default function UserDashboard() {
                       <p className="text-xs text-gray-500">{action.desc}</p>
                     </div>
                   </Link>
-                ) : (
-                  <div
-                    key={action.key}
-                    className="flex items-center p-4 border border-gray-200 rounded-lg bg-gray-100 opacity-50 cursor-not-allowed select-none"
-                  >
-                    <Icon className={`h-6 w-6 mr-3 ${action.key === 'ship' ? 'text-blue-600' : action.key === 'track' ? 'text-green-600' : 'text-purple-600'}`} />
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900">{action.title}</p>
-                      <p className="text-xs text-gray-500">{action.desc}</p>
-                    </div>
-                  </div>
                 )
               })}
             </div>
           </div>
         </div>
-
-        {/* Recent Orders */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+        {/* Recent Orders with search/filter */}
+        <div className="bg-white rounded-lg shadow mb-4">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900">{t('recentOrders')}</h3>
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索订单号/收件人"
+                value={orderSearch}
+                onChange={e => setOrderSearch(e.target.value)}
+                className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none"
+              />
+              <Link href="/orders" className="ml-2 text-blue-600 hover:underline text-sm">全部订单</Link>
+            </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {recentOrders.map((order) => (
+            {filteredOrders.map((order) => (
               <div key={order.id} className="px-6 py-4 relative">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center">
@@ -268,7 +344,7 @@ export default function UserDashboard() {
                   </div>
                   <span className={`absolute right-6 top-4 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10 rounded`}>{t(order.status === 'Pending Pickup' ? 'pendingPickup' : order.status === 'In Transit' ? 'inTransit' : order.status === 'Delivered' ? 'delivered' : order.status)}</span>
                   {order.status === 'Pending Pickup' && (
-                    <div className="absolute right-6" style={{top: '3.5rem'}}>
+                    <div className="absolute right-6 hidden md:block" style={{top: '3.5rem'}}>
                       <button
                         className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1"
                         onClick={() => handleRemind(order)}
@@ -282,6 +358,17 @@ export default function UserDashboard() {
                     <div className="text-sm text-gray-500">€{order.amount}</div>
                     <div className="text-sm text-gray-500">{order.date}</div>
                   </div>
+                  {order.status === 'Pending Pickup' && (
+                    <div className="mt-2 md:hidden w-full flex justify-end">
+                      <button
+                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1"
+                        onClick={() => handleRemind(order)}
+                      >
+                        <Bell className="h-4 w-4 mr-1" />
+                        {t('remind')}
+                      </button>
+                    </div>
+                  )}
                   <div className="mt-2">
                     <Link
                       href={`/track/detail/${order.id}`}
@@ -293,6 +380,9 @@ export default function UserDashboard() {
                 </div>
               </div>
             ))}
+            {filteredOrders.length === 0 && (
+              <div className="px-6 py-8 text-center text-gray-400">无匹配订单</div>
+            )}
           </div>
         </div>
       </div>

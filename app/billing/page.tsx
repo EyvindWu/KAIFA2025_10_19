@@ -170,6 +170,53 @@ export default function BillingPage() {
     return new Date(dateString).toLocaleDateString('de-DE')
   }
 
+  // 假数据，仿照发票样例
+  const invoice = {
+    company: {
+      name: 'KAIFA EXPRESS SRL',
+      address: 'Viale Montegrappa 246, 59100 Prato',
+      tel: '344/6772783',
+      email: 'kaifaexpress@gmail.com',
+      piva: 'IT02595340973',
+      iban: 'IT43V0339912500CC0030206640',
+      bic: 'EXRRITM2',
+    },
+    client: {
+      name: 'BELLA STORE SRO',
+      address: 'VODICKOVA 704/36, 11000 NOVE MESTO',
+      codiceFiscale: '000174',
+      partitaIVA: '17333211',
+    },
+    invoice: {
+      number: '000147/25',
+      date: '18-01-2025',
+      page: 1,
+      agent: '',
+      payment: 'CONTANTI',
+      reference: '',
+      bank: '',
+    },
+    items: [
+      { ref: 'KAIL03659/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 1, peso: '20,00', volume: '0,096', qta: 1, prezzo: '26,00', importo: '26,00', iva: 'A07' },
+      { ref: 'KAIL03660/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '39,00', volume: '0,525', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
+      { ref: 'KAIL04163/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '75,00', volume: '0,432', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
+      { ref: 'KAIL04466/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '75,00', volume: '0,432', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
+    ],
+    totals: {
+      imponibile: '287,00',
+      iva: '0,00',
+      totaleNetto: '287,00',
+      dirittoFisso: '0,00',
+      speseBancarie: '0,00',
+      totaleDocumento: '287,00',
+      scadenza: '18-01-2025',
+      esenzioni: 'NON IMPONIBILE ART. 7',
+      bolli: '0,00',
+      totaleImposta: '0,00',
+    },
+    note: '',
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -178,433 +225,99 @@ export default function BillingPage() {
           <div className="flex items-center h-16">
             <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-5 w-5 mr-2" />
-              {t('backToHome')}
+              返回首页
             </Link>
-            <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('billingPayments')}</h1>
+            <h1 className="ml-6 text-xl font-semibold text-gray-900">账单与发票</h1>
           </div>
         </div>
       </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Merchant Verification Status */}
-        {!merchantStatus.isVerified && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-yellow-400">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <Shield className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('businessVerificationRequired')}</h3>
-                <p className="text-gray-600 mb-4">
-                  {t('businessVerificationDesc')}
-                </p>
-                <div className="flex items-center space-x-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getVerificationStatusColor(merchantStatus.verificationStatus)}`}>
-                    {getVerificationStatusIcon(merchantStatus.verificationStatus)}
-                    <span className="ml-1 capitalize">{merchantStatus.verificationStatus}</span>
-                  </span>
-                  <button 
-                    onClick={() => setIsVerificationModalOpen(true)}
-                    className="bg-brown-600 text-white px-4 py-2 rounded-md hover:bg-brown-700 transition-colors font-medium"
-                  >
-                    {t('completeVerification')}
-                  </button>
-                </div>
-              </div>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md p-8 relative">
+          {/* 公司信息 */}
+          <div className="flex flex-col md:flex-row md:justify-between mb-4">
+            <div>
+              <div className="font-bold text-lg">{invoice.company.name}</div>
+              <div>{invoice.company.address}</div>
+              <div>Tel. {invoice.company.tel}</div>
+              <div>{invoice.company.email}</div>
+              <div>P.IVA {invoice.company.piva}</div>
+              <div>IBAN {invoice.company.iban}</div>
+              <div>BIC: {invoice.company.bic}</div>
+            </div>
+            <div className="mt-4 md:mt-0 text-right">
+              <div>Spett.le</div>
+              <div>{invoice.client.name}</div>
+              <div>{invoice.client.address}</div>
             </div>
           </div>
-        )}
-
-        {/* Summary Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-100 rounded-full p-3 mr-4">
-                <Euro className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t('totalSpent')}</p>
-                <p className="text-2xl font-bold text-gray-900">€3,150.24</p>
-              </div>
+          {/* 发票基本信息 */}
+          <div className="flex flex-wrap gap-4 mb-4 text-sm">
+            <div><span className="font-semibold">N.E DATA DOCUMENTO:</span> {invoice.invoice.number}</div>
+            <div><span className="font-semibold">DATA:</span> {invoice.invoice.date}</div>
+            <div><span className="font-semibold">CLIENTE:</span> {invoice.client.codiceFiscale}</div>
+            <div><span className="font-semibold">PARTITA IVA:</span> {invoice.client.partitaIVA}</div>
+            <div><span className="font-semibold">N.PAG.:</span> {invoice.invoice.page}</div>
+            <div><span className="font-semibold">MODALITÀ DI PAGAMENTO:</span> {invoice.invoice.payment}</div>
+          </div>
+          {/* 明细表格 */}
+          <div className="overflow-x-auto mb-4">
+            <table className="min-w-full border text-xs">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border px-2 py-1">NS.RIF.</th>
+                  <th className="border px-2 py-1">DESCRIZIONE</th>
+                  <th className="border px-2 py-1">COLLI</th>
+                  <th className="border px-2 py-1">PESO</th>
+                  <th className="border px-2 py-1">VOLUME</th>
+                  <th className="border px-2 py-1">Q.TA'</th>
+                  <th className="border px-2 py-1">PREZZO</th>
+                  <th className="border px-2 py-1">IMPORTO</th>
+                  <th className="border px-2 py-1">IVA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoice.items.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="border px-2 py-1 whitespace-nowrap">{item.ref}</td>
+                    <td className="border px-2 py-1 whitespace-nowrap">{item.desc} <br /> {item.city}</td>
+                    <td className="border px-2 py-1 text-center">{item.colli}</td>
+                    <td className="border px-2 py-1 text-center">{item.peso}</td>
+                    <td className="border px-2 py-1 text-center">{item.volume}</td>
+                    <td className="border px-2 py-1 text-center">{item.qta}</td>
+                    <td className="border px-2 py-1 text-right">{item.prezzo}</td>
+                    <td className="border px-2 py-1 text-right">{item.importo}</td>
+                    <td className="border px-2 py-1 text-center">{item.iva}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* 金额汇总区 */}
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+            <div>
+              <div><span className="font-semibold">TOTALE:</span> {invoice.totals.totaleDocumento}</div>
+              <div><span className="font-semibold">SC. %:</span> 0,0</div>
+              <div><span className="font-semibold">TOTALE NETTO:</span> {invoice.totals.totaleNetto}</div>
+              <div><span className="font-semibold">DIRITTO FISSO:</span> {invoice.totals.dirittoFisso}</div>
+            </div>
+            <div>
+              <div><span className="font-semibold">SP. BANCARIE:</span> {invoice.totals.speseBancarie}</div>
+              <div><span className="font-semibold">ESENZIONI:</span> {invoice.totals.esenzioni}</div>
+              <div><span className="font-semibold">BOLLI:</span> {invoice.totals.bolli}</div>
+              <div><span className="font-semibold">TOTALE DOCUMENTO EUR:</span> <span className="font-bold text-lg">{invoice.totals.totaleDocumento}</span></div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="bg-green-100 rounded-full p-3 mr-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t('paidBills')}</p>
-                <p className="text-2xl font-bold text-gray-900">€1,250.75</p>
-              </div>
-            </div>
+          {/* 付款与到期日 */}
+          <div className="flex flex-wrap gap-4 text-sm mb-2">
+            <div><span className="font-semibold">SCADENZE:</span> {invoice.totals.scadenza}</div>
+            <div><span className="font-semibold">IMPORTO:</span> {invoice.totals.totaleDocumento}</div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="bg-yellow-100 rounded-full p-3 mr-4">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t('pending')}</p>
-                <p className="text-2xl font-bold text-gray-900">€1,899.50</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="bg-purple-100 rounded-full p-3 mr-4">
-                <Calendar className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t('monthlyBills')}</p>
-                <p className="text-2xl font-bold text-gray-900">2</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'overview'
-                    ? 'border-brown-500 text-brown-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('overview')}
-              </button>
-              <button
-                onClick={() => setActiveTab('monthly_bills')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'monthly_bills'
-                    ? 'border-brown-500 text-brown-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('monthlyBills')}
-              </button>
-              <button
-                onClick={() => setActiveTab('invoices')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'invoices'
-                    ? 'border-brown-500 text-brown-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('individualInvoices')}
-              </button>
-              <button
-                onClick={() => setActiveTab('payment_methods')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'payment_methods'
-                    ? 'border-brown-500 text-brown-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('paymentMethods')}
-              </button>
-            </nav>
-          </div>
-
-          <div className="p-6">
-            {activeTab === 'overview' && (
-              <div>
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">{t('monthlyBillingStatus')}</h3>
-                  {merchantStatus.monthlyBillingEligible ? (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 mr-2" />
-                        <span className="text-green-800 font-medium">{t('monthlyBillingActive')}</span>
-                      </div>
-                      <p className="text-green-700 mt-1">{t('monthlyBillingEligibleDesc')}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                        <span className="text-yellow-800 font-medium">{t('monthlyBillingNotAvailable')}</span>
-                      </div>
-                      <p className="text-yellow-700 mt-1">{t('monthlyBillingNotAvailableDesc')}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-4">{t('recentMonthlyBills')}</h4>
-                    <div className="space-y-3">
-                      {monthlyBills.slice(0, 3).map((bill) => (
-                        <div key={bill.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium text-gray-900">{bill.period}</h5>
-                              <p className="text-sm text-gray-600">{bill.shipments} {t('shipments')}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-gray-900">{formatCurrency(bill.amount)}</p>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bill.status)}`}>
-                                {getStatusIcon(bill.status)}
-                                <span className="ml-1 capitalize">{bill.status}</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-4">{t('quickActions')}</h4>
-                    <div className="space-y-3">
-                      <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center">
-                          <Download className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">{t('downloadCurrentBill')}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      </button>
-                      <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center">
-                          <CreditCard className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">{t('updatePaymentMethod')}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      </button>
-                      <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center">
-                          <Settings className="h-5 w-5 text-gray-600 mr-3" />
-                          <span className="font-medium text-gray-900">{t('billingPreferences')}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'monthly_bills' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">{t('monthlyBills')}</h3>
-                  <select
-                    value={selectedPeriod}
-                    onChange={(e) => setSelectedPeriod(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  >
-                    <option value="current">{t('currentPeriod')}</option>
-                    <option value="last_3_months">{t('last3Months')}</option>
-                    <option value="last_6_months">{t('last6Months')}</option>
-                    <option value="all">{t('allTime')}</option>
-                  </select>
-                </div>
-
-                <div className="space-y-4">
-                  {monthlyBills.map((bill) => (
-                    <div key={bill.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-900">{bill.period}</h4>
-                          <p className="text-gray-600">{bill.description}</p>
-                        </div>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(bill.status)}`}>
-                          {getStatusIcon(bill.status)}
-                          <span className="ml-1 capitalize">{bill.status}</span>
-                        </span>
-                      </div>
-                      
-                      <div className="grid md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                          <p className="text-sm text-gray-600">{t('billAmount')}</p>
-                          <p className="text-xl font-bold text-gray-900">{formatCurrency(bill.amount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">{t('shipments')}</p>
-                          <p className="text-lg font-semibold text-gray-900">{bill.shipments}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">{t('issueDate')}</p>
-                          <p className="text-sm font-medium text-gray-900">{formatDate(bill.date)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">{t('dueDate')}</p>
-                          <p className="text-sm font-medium text-gray-900">{formatDate(bill.dueDate)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                          <Eye className="h-4 w-4 mr-2" />
-                          {t('viewDetails')}
-                        </button>
-                        <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
-                          <Download className="h-4 w-4 mr-2" />
-                          {t('downloadPDF')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'invoices' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">{t('individualInvoices')}</h3>
-                  <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                    <Download className="h-4 w-4 mr-2" />
-                    {t('exportAll')}
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-lg font-semibold text-gray-900">{invoice.id}</h4>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
-                              {getStatusIcon(invoice.status)}
-                              <span className="ml-1 capitalize">{invoice.status}</span>
-                            </span>
-                          </div>
-                          <p className="text-gray-600 mb-2">{invoice.description}</p>
-                          <div className="flex items-center space-x-6 text-sm text-gray-500">
-                            <span>{t('date')}: {formatDate(invoice.date)}</span>
-                            <span>{t('due')}: {formatDate(invoice.dueDate)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="p-2 text-gray-400 hover:text-gray-600">
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button className="p-2 text-gray-400 hover:text-gray-600">
-                              <Download className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'payment_methods' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">{t('paymentMethods')}</h3>
-                  <button className="flex items-center px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('addPaymentMethod')}
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {paymentMethods.map((method) => (
-                    <div key={method.id} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="bg-gray-100 rounded-lg p-3 mr-4">
-                            <CreditCard className="h-6 w-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">{method.name}</h4>
-                            {method.expiry && (
-                              <p className="text-sm text-gray-500">{t('expires')}: {method.expiry}</p>
-                            )}
-                            {method.email && (
-                              <p className="text-sm text-gray-500">{t('email')}: {method.email}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          {method.isDefault && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brown-100 text-brown-800">
-                              {t('default')}
-                            </span>
-                          )}
-                          <button className="text-brown-600 hover:text-brown-700 text-sm font-medium">
-                            {t('edit')}
-                          </button>
-                          <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                            {t('remove')}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add New Payment Method Form */}
-                <div className="mt-8 border-t pt-8">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">{t('addNewPaymentMethod')}</h4>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardNumber')}</label>
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardholderName')}</label>
-                      <input
-                        type="text"
-                        placeholder="John Doe"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('expiryDate')}</label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('cvv')}</label>
-                      <input
-                        type="text"
-                        placeholder="123"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-brown-600 focus:ring-brown-500"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{t('setAsDefaultPaymentMethod')}</span>
-                      </label>
-                    </div>
-                    <div className="md:col-span-2">
-                      <button className="w-full px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                        {t('addPaymentMethod')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* 备注区 */}
+          <div className="text-xs text-gray-500 mt-2">Vi preghiamo di verificare l'esattezza dei Vostri dati anagrafici e fiscali, le cui eventuali modifiche dovranno essere tempestivamente comunicate in ottemperanza al D.L.223/06</div>
+          {/* 下载PDF按钮（占位） */}
+          <button className="absolute top-4 right-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+            <Download className="h-5 w-5" /> Scarica PDF
+          </button>
         </div>
       </main>
 

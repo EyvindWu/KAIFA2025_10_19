@@ -13,7 +13,10 @@ import {
   AlertCircle,
   BarChart3,
   Calendar,
-  MapPin
+  MapPin,
+  Download,
+  Bell,
+  Filter
 } from 'lucide-react'
 import { useTranslation } from '../../utils/translations'
 
@@ -32,34 +35,23 @@ export default function AdminDashboard() {
     localStorage.removeItem('kaifa-reminders');
     setReminders([]);
   };
-  // 仅保留客服/管理员常用统计
-  const stats = [
-    {
-      name: t('statTotalOrders'),
-      value: '1,234',
-      change: '+12.5%',
-      changeType: 'increase' as const,
-      icon: Package,
-      color: 'blue'
-    },
-    {
-      name: t('statActiveCustomers'),
-      value: '567',
-      change: '+8.2%',
-      changeType: 'increase' as const,
-      icon: Users,
-      color: 'green'
-    },
-    {
-      name: t('statInTransit'),
-      value: '89',
-      change: '-3.1%',
-      changeType: 'decrease' as const,
-      icon: Truck,
-      color: 'yellow'
-    }
-  ];
+  // 时间筛选
+  const [statPeriod, setStatPeriod] = useState<'month'|'year'>('month');
+  const statsData = {
+    month: [
+      { name: t('statTotalOrders'), value: '123', change: '+2.5%', changeType: 'increase', icon: Package, color: 'blue' },
+      { name: t('statActiveCustomers'), value: '56', change: '+1.2%', changeType: 'increase', icon: Users, color: 'green' },
+      { name: t('statInTransit'), value: '8', change: '-0.8%', changeType: 'decrease', icon: Truck, color: 'yellow' }
+    ],
+    year: [
+      { name: t('statTotalOrders'), value: '1,234', change: '+12.5%', changeType: 'increase', icon: Package, color: 'blue' },
+      { name: t('statActiveCustomers'), value: '567', change: '+8.2%', changeType: 'increase', icon: Users, color: 'green' },
+      { name: t('statInTransit'), value: '89', change: '-3.1%', changeType: 'decrease', icon: Truck, color: 'yellow' }
+    ]
+  };
+  const stats = statsData[statPeriod];
 
+  // 仅保留客服/管理员常用统计
   const recentOrders = [
     {
       id: '1Z999AA10123456795',
@@ -95,12 +87,7 @@ export default function AdminDashboard() {
     }
   ]
 
-  const topRoutes = [
-    { from: 'Berlin', to: 'Munich', orders: 156, revenue: 12450 },
-    { from: 'Frankfurt', to: 'Hamburg', orders: 134, revenue: 10890 },
-    { from: 'Cologne', to: 'Stuttgart', orders: 98, revenue: 7840 },
-    { from: 'Düsseldorf', to: 'Leipzig', orders: 87, revenue: 6960 }
-  ]
+  // 删除topRoutes相关数据和区块
 
   const statusMap: Record<string, string> = {
     'Pending Pickup': t('pendingPickup'),
@@ -177,12 +164,45 @@ export default function AdminDashboard() {
     alert(`${t('remindPaymentSent')||'Payment reminder sent to'} ${bill.customer}`);
   };
 
+  // 最近订单筛选
+  const [orderStatus, setOrderStatus] = useState('');
+  const [orderCustomer, setOrderCustomer] = useState('');
+  const [orderDate, setOrderDate] = useState('');
+  const filteredOrders = recentOrders.filter(order =>
+    (orderStatus ? order.status === orderStatus : true) &&
+    (orderCustomer ? order.customer.toLowerCase().includes(orderCustomer.toLowerCase()) : true) &&
+    (orderDate ? order.date.startsWith(orderDate) : true)
+  );
+
+  // 删除topRoutes相关数据和区块
+
+  // 账单管理区块批量操作
+  const handleExportBills = () => alert('导出账单功能（占位）');
+  const handleBatchRemind = () => alert('批量提醒功能（占位）');
+
+  // 假数据：待审核月结申请、异常订单
+  const pendingMonthly = 2;
+
   return (
     <section className="space-y-6">
+      {/* 顶部提醒 */}
+      <div className="flex gap-4 mb-2">
+        <a href="/admin/monthly-billing-requests" className="flex items-center gap-1 bg-yellow-50 border border-yellow-300 text-yellow-800 px-3 py-1 rounded hover:bg-yellow-100 cursor-pointer">
+          <Bell className="h-4 w-4" /> 待审核月结申请 <span className="font-bold">{pendingMonthly}</span>
+        </a>
+      </div>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('dashboardTitle')}</h1>
-        <p className="text-gray-600">{t('dashboardWelcome')}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('dashboardTitle')}</h1>
+          <p className="text-gray-600">{t('dashboardWelcome')}</p>
+        </div>
+        {/* 时间筛选 */}
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-gray-500">统计周期：</span>
+          <button className={`px-3 py-1 rounded text-xs font-semibold border ${statPeriod==='month'?'bg-blue-50 border-blue-400 text-blue-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setStatPeriod('month')}>本月</button>
+          <button className={`px-3 py-1 rounded text-xs font-semibold border ${statPeriod==='year'?'bg-blue-50 border-blue-400 text-blue-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setStatPeriod('year')}>本年</button>
+        </div>
       </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -231,10 +251,8 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">{t('paymentManagement') || 'Payment Management'}</h2>
           <div className="flex gap-2">
-            <button className={`px-3 py-1 rounded text-xs font-semibold border ${paymentTab==='all'?'bg-blue-50 border-blue-400 text-blue-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setPaymentTab('all')}>{t('all')}</button>
-            <button className={`px-3 py-1 rounded text-xs font-semibold border ${paymentTab==='paid'?'bg-green-50 border-green-400 text-green-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setPaymentTab('paid')}>{t('paid')}</button>
-            <button className={`px-3 py-1 rounded text-xs font-semibold border ${paymentTab==='unpaid'?'bg-yellow-50 border-yellow-400 text-yellow-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setPaymentTab('unpaid')}>{t('unpaid')}</button>
-            <button className={`px-3 py-1 rounded text-xs font-semibold border ${paymentTab==='overdue'?'bg-red-50 border-red-400 text-red-700':'bg-gray-50 border-gray-300 text-gray-600'}`} onClick={()=>setPaymentTab('overdue')}>{t('overdue')}</button>
+            <button className="px-3 py-1 rounded text-xs font-semibold border bg-blue-50 border-blue-400 text-blue-700" onClick={handleExportBills}><Download className="h-4 w-4 inline" /> 导出账单</button>
+            <button className="px-3 py-1 rounded text-xs font-semibold border bg-yellow-50 border-yellow-400 text-yellow-700" onClick={handleBatchRemind}><Bell className="h-4 w-4 inline" /> 批量提醒</button>
           </div>
         </div>
         <table className="min-w-full text-xs text-gray-900">
@@ -314,61 +332,49 @@ export default function AdminDashboard() {
           <button onClick={() => { handleClearReminders(); alert(t('remindProcessed') || 'All reminders processed!'); }} className="px-2 py-1 bg-white text-gray-600 rounded border border-gray-300 text-xs font-normal hover:bg-gray-100 transition-colors" disabled={reminders.length === 0}>{t('processReminders') || 'Process All'}</button>
         </div>
       </div>
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Orders */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">{t('recentOrders')}</h3>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className={`p-2 rounded-full ${getStatusColor(order.status)}`}>{getStatusIcon(order.status)}</div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-900">{order.customer}</p>
-                      <p className="text-sm text-gray-500">{order.id}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">€{order.amount}</p>
-                    <p className="text-sm text-gray-500">{order.date}</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center text-sm text-gray-500">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {order.destination}
-                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(order.status)}`}>{statusMap[order.status]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* 最近订单筛选区块 */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="h-4 w-4 text-gray-400" />
+          <select value={orderStatus} onChange={e=>setOrderStatus(e.target.value)} className="border px-2 py-1 rounded text-sm">
+            <option value="">全部状态</option>
+            <option value="Pending Pickup">待揽收</option>
+            <option value="In Transit">运输中</option>
+            <option value="Delivered">已送达</option>
+            <option value="Exception">异常</option>
+          </select>
+          <input type="text" placeholder="客户名" value={orderCustomer} onChange={e=>setOrderCustomer(e.target.value)} className="border px-2 py-1 rounded text-sm" />
+          <input type="date" value={orderDate} onChange={e=>setOrderDate(e.target.value)} className="border px-2 py-1 rounded text-sm" />
         </div>
-        {/* Top Routes */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">{t('topRoutes')}</h3>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {topRoutes.map((route, index) => (
-              <div key={index} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{route.from} → {route.to}</p>
-                    <p className="text-sm text-gray-500">{route.orders} {t('ordersLabel')}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">€{route.revenue.toLocaleString()}</p>
-                    <p className="text-sm text-gray-500">{t('revenueLabel')}</p>
-                  </div>
-                </div>
-              </div>
+        <table className="min-w-full text-xs text-gray-900">
+          <thead>
+            <tr className="text-gray-500 border-b">
+              <th className="py-2 text-left">订单号</th>
+              <th className="py-2 text-left">客户</th>
+              <th className="py-2 text-left">状态</th>
+              <th className="py-2 text-left">金额</th>
+              <th className="py-2 text-left">时间</th>
+              <th className="py-2 text-left">目的地</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.map(order => (
+              <tr key={order.id}>
+                <td>{order.id}</td>
+                <td>{order.customer}</td>
+                <td>{statusMap[order.status]}</td>
+                <td>€{order.amount}</td>
+                <td>{order.date}</td>
+                <td>{order.destination}</td>
+              </tr>
             ))}
-          </div>
-        </div>
+            {filteredOrders.length === 0 && (
+              <tr><td colSpan={6} className="text-center text-gray-400 py-4">无匹配订单</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
+      {/* 删除topRoutes相关数据和区块 */}
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">

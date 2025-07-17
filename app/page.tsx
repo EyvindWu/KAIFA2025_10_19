@@ -23,6 +23,7 @@ import { orderList } from './track/history/orderList'
 import { personInfoMap } from './track/detail/[trackingNo]/utils'
 import { buildTimeline } from './track/detail/[trackingNo]/utils'
 import { SystemModal } from './components/ClientProviders';
+import { usePathname } from 'next/navigation';
 
 // Tab按钮统一样式
 const tabBtnClass = 'flex-1 w-1/4 px-6 py-2 font-semibold border-b-2 transition-colors text-center flex items-center justify-center gap-1 text-base h-12'
@@ -137,6 +138,7 @@ export default function HomePage() {
   const [remindSentMap, setRemindSentMap] = useState<{[id: string]: boolean}>({});
   const [showRemindModal, setShowRemindModal] = useState(false);
   const [remindModalMsg, setRemindModalMsg] = useState('');
+  const pathname = usePathname();
 
   // mockOrders同步为Order History的orderList
   const mockOrders = orderList
@@ -161,6 +163,18 @@ export default function HomePage() {
       }
     }
   }, [selectedOrder])
+
+  React.useEffect(() => {
+    // 每次进入主页时重置关键状态，防止重复渲染
+    setActiveTab('track');
+    setShowShare(false);
+    setShowPrintConfirm(false);
+    setShareOrder(null);
+    setSharePopoverPos(null);
+    setRemindSentMap({});
+    setShowRemindModal(false);
+    setRemindModalMsg('');
+  }, [pathname]);
 
   const handlePrint = async (order: any) => {
     setPendingPrintOrder(order);
@@ -356,13 +370,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#f6f8fa] max-w-7xl mx-auto px-4 py-8">
       {/* Quick Actions Section - Tabs */}
-      <section className="mb-8 rounded-2xl overflow-hidden bg-gradient-to-br from-green-900 via-blue-900 to-green-800 shadow-lg">
+      {/* PC端主功能区：只显示4个横向标签+功能面板 */}
+      <section className="mb-8 rounded-2xl overflow-hidden bg-gradient-to-br from-green-900 via-blue-900 to-green-800 shadow-lg hidden md:block">
         <div className="max-w-6xl mx-auto py-10 px-2 sm:px-6">
           <h2 className="text-2xl font-bold text-white mb-8 text-center drop-shadow-lg">{t('quickActions')}</h2>
-
-          {/* Tabs Header & Content - 响应式 */}
-          {/* PC端 横向Tabs+内容，整体包裹在一个白色卡片里 */}
-          <div className="hidden md:flex justify-center">
+          <div className="flex justify-center">
             <div className="w-full max-w-2xl">
               <div className="bg-white rounded-2xl shadow-md overflow-hidden">
                 {/* Tabs按钮组 */}
@@ -448,9 +460,13 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* 移动端：每个Tab按钮下方紧跟内容，纵向排列 */}
-          <div className="md:hidden flex flex-col gap-2 w-full bg-gradient-to-br from-green-900 via-blue-900 to-green-800">
+        </div>
+      </section>
+      {/* 移动端主功能区：只在md以下显示 */}
+      <section className="mb-8 rounded-2xl overflow-hidden bg-gradient-to-br from-green-900 via-blue-900 to-green-800 shadow-lg md:hidden">
+        <div className="max-w-6xl mx-auto py-10 px-2 sm:px-6">
+          <h2 className="text-2xl font-bold text-white mb-8 text-center drop-shadow-lg">{t('quickActions')}</h2>
+          <div className="flex flex-col gap-2 w-full bg-gradient-to-br from-green-900 via-blue-900 to-green-800">
             {/* Ship Tab (1) */}
             <div className="w-full">
               <button

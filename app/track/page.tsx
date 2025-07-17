@@ -18,6 +18,13 @@ import {
 } from 'lucide-react'
 import { useTranslation } from '../utils/translations'
 
+const historyOrderList = [
+  '1Z999AA10123457001', // 第一条历史订单
+  '1Z999AA10123457002',
+  // 可继续添加更多历史订单号
+];
+const defaultTrackingNumber = historyOrderList[0];
+
 const sampleTimeline = [
   { time: '2024-05-01 14:32', location: 'Frankfurt, Germany', status: 'In Transit', desc: 'Departed from facility' },
   { time: '2024-04-30 09:10', location: 'Berlin, Germany', status: 'Picked Up', desc: 'Package picked up by carrier' },
@@ -44,7 +51,7 @@ const descKeyMap: { [key: string]: string } = {
 
 export default function TrackPage() {
   const { t } = useTranslation();
-  const [trackingNumber, setTrackingNumber] = useState('')
+  const [trackingNumber, setTrackingNumber] = useState(defaultTrackingNumber)
   const [result, setResult] = useState<null | typeof sampleTimeline>(null)
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false);
@@ -179,9 +186,9 @@ export default function TrackPage() {
           <span className="text-gray-500 mr-2">{t('sampleOrderNumber')}:</span>
           <span
             className="font-mono text-blue-600 underline hover:text-blue-800 cursor-pointer"
-            onClick={() => setTrackingNumber('1Z999AA10123456784')}
+            onClick={() => setTrackingNumber(defaultTrackingNumber)}
           >
-            1Z999AA10123456784
+            {defaultTrackingNumber}
           </span>
         </div>
       </div>
