@@ -142,8 +142,12 @@ export default function UserDashboard() {
   const filteredOrders = recentOrders.filter(order =>
     order.id.includes(orderSearch) || order.summary.toLowerCase().includes(orderSearch.toLowerCase())
   );
-  // 月结账单状态（假数据）
-  const monthlyBillingStatus = '待审核'; // 可为“已开通”、“待审核”、“未开通”
+  // 月结账单状态映射
+  const statusTextMap: Record<string, string> = {
+    approved: '已开通',
+    pending: '待审核',
+    '': '未开通'
+  };
 
   // 检查本地storage是否有申请
   useEffect(() => {
@@ -178,11 +182,11 @@ export default function UserDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6 flex items-center justify-between">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
-                <ArrowLeft className="h-5 w-5 mr-1" />
-                {t('backToHome')}
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">{t('welcomeBack')}, {user.name}!</h1>
+            <Link href="/" className="flex items-center text-blue-600 hover:underline mr-4">
+              <ArrowLeft className="h-5 w-5 mr-1" />
+              {t('backToHome')}
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-900">{t('welcomeBack')}, {user.name}!</h1>
             </div>
             {/* 个人资料快捷入口 */}
             <Link href="/profile" className="flex items-center gap-1 text-blue-600 hover:underline">
@@ -196,7 +200,17 @@ export default function UserDashboard() {
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5 text-yellow-600" />
           <span className="text-sm font-medium text-gray-700">月结账单状态：</span>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${monthlyStatus==='approved'?'bg-green-100 text-green-700':monthlyStatus==='pending'?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-700'}`}>{monthlyStatus==='approved'?'已开通':monthlyStatus==='pending'?'待审核':'未开通'}</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              monthlyStatus === 'approved'
+                ? 'bg-green-100 text-green-700'
+                : monthlyStatus === 'pending'
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            {statusTextMap[monthlyStatus] ?? '未开通'}
+          </span>
           {monthlyStatus !== 'approved' && (
             <button className="ml-4 flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs" onClick={()=>setShowMonthlyModal(true)}>
               <Plus className="h-4 w-4" /> 申请月结
@@ -237,12 +251,7 @@ export default function UserDashboard() {
             </div>
           </div>
         )}
-        {/* 月结账单状态 */}
-        <div className="mb-4 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-yellow-600" />
-          <span className="text-sm font-medium text-gray-700">月结账单状态：</span>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${monthlyBillingStatus==='已开通'?'bg-green-100 text-green-700':monthlyBillingStatus==='待审核'?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-700'}`}>{monthlyBillingStatus}</span>
-        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {userStats.map((stat) => {
@@ -344,15 +353,15 @@ export default function UserDashboard() {
                   </div>
                   <span className={`absolute right-6 top-4 h-7 w-24 flex items-center justify-center text-xs font-semibold ${getStatusColor(order.status)} z-10 rounded`}>{t(order.status === 'Pending Pickup' ? 'pendingPickup' : order.status === 'In Transit' ? 'inTransit' : order.status === 'Delivered' ? 'delivered' : order.status)}</span>
                   {order.status === 'Pending Pickup' && (
-                    <div className="absolute right-6 hidden md:block" style={{top: '3.5rem'}}>
-                      <button
-                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1"
-                        onClick={() => handleRemind(order)}
-                      >
-                        <Bell className="h-4 w-4 mr-1" />
-                        {t('remind')}
-                      </button>
-                    </div>
+                      <div className="absolute right-6 hidden md:block" style={{top: '3.5rem'}}>
+                        <button
+                          className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors flex items-center gap-1"
+                          onClick={() => handleRemind(order)}
+                        >
+                          <Bell className="h-4 w-4 mr-1" />
+                          {t('remind')}
+                        </button>
+                      </div>
                   )}
                   <div className="flex justify-between items-center mt-1">
                     <div className="text-sm text-gray-500">€{order.amount}</div>

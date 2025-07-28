@@ -167,11 +167,14 @@ export default function AdminDashboard() {
   // 最近订单筛选
   const [orderStatus, setOrderStatus] = useState('');
   const [orderCustomer, setOrderCustomer] = useState('');
-  const [orderDate, setOrderDate] = useState('');
+  const [orderDateStart, setOrderDateStart] = useState('');
+  const [orderDateEnd, setOrderDateEnd] = useState('');
   const filteredOrders = recentOrders.filter(order =>
     (orderStatus ? order.status === orderStatus : true) &&
     (orderCustomer ? order.customer.toLowerCase().includes(orderCustomer.toLowerCase()) : true) &&
-    (orderDate ? order.date.startsWith(orderDate) : true)
+    (orderDateStart && orderDateEnd ? order.date >= orderDateStart && order.date <= orderDateEnd : true) &&
+    (orderDateStart && !orderDateEnd ? order.date >= orderDateStart : true) &&
+    (!orderDateStart && orderDateEnd ? order.date <= orderDateEnd : true)
   );
 
   // 删除topRoutes相关数据和区块
@@ -193,9 +196,9 @@ export default function AdminDashboard() {
       </div>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboardTitle')}</h1>
-          <p className="text-gray-600">{t('dashboardWelcome')}</p>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboardTitle')}</h1>
+        <p className="text-gray-600">{t('dashboardWelcome')}</p>
         </div>
         {/* 时间筛选 */}
         <div className="flex gap-2 items-center">
@@ -328,23 +331,54 @@ export default function AdminDashboard() {
           )}
         </div>
         <div className="flex flex-col gap-2 ml-6">
-          <button onClick={handleClearReminders} className="px-2 py-1 bg-white text-gray-600 rounded border border-gray-300 text-xs font-normal hover:bg-gray-100 transition-colors" disabled={reminders.length === 0}>{t('clearReminders') || 'Clear'}</button>
-          <button onClick={() => { handleClearReminders(); alert(t('remindProcessed') || 'All reminders processed!'); }} className="px-2 py-1 bg-white text-gray-600 rounded border border-gray-300 text-xs font-normal hover:bg-gray-100 transition-colors" disabled={reminders.length === 0}>{t('processReminders') || 'Process All'}</button>
+          <button 
+            onClick={handleClearReminders} 
+            className="px-2 py-1 bg-white text-gray-600 rounded border border-gray-300 text-xs font-normal hover:bg-gray-100 transition-colors" 
+            disabled={reminders.length === 0}
+            title="清除所有催单提醒"
+          >
+            {t('clearReminders') || 'Clear'}
+          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => { handleClearReminders(); alert(t('remindProcessed') || 'All reminders processed!'); }} 
+              className="px-2 py-1 bg-white text-gray-600 rounded border border-gray-300 text-xs font-normal hover:bg-gray-100 transition-colors" 
+              disabled={reminders.length === 0}
+            >
+              {t('processReminders') || 'Process All'}
+            </button>
+            <button 
+              onClick={() => {
+                alert(`一键处理功能说明：\n\n自动编辑当前列表中所有催单单号并提出催促，发邮件给相应公司UPS/TNT。\n\n如单号全部来自UPS与TNT其中一方则只编辑一封邮件发送至UPS客服邮箱，如单号来自UPS于TNT双方则各编辑一封邮件(内容为各自公司的单号)至UPS/TNT邮箱`);
+              }}
+              className="w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+              title="查看功能说明"
+            >
+              !
+            </button>
+          </div>
         </div>
       </div>
       {/* 最近订单筛选区块 */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="h-4 w-4 text-gray-400" />
-          <select value={orderStatus} onChange={e=>setOrderStatus(e.target.value)} className="border px-2 py-1 rounded text-sm">
+          <select value={orderStatus} onChange={e=>setOrderStatus(e.target.value)} className="border px-2 py-1 rounded text-sm text-black">
             <option value="">全部状态</option>
             <option value="Pending Pickup">待揽收</option>
             <option value="In Transit">运输中</option>
             <option value="Delivered">已送达</option>
             <option value="Exception">异常</option>
           </select>
-          <input type="text" placeholder="客户名" value={orderCustomer} onChange={e=>setOrderCustomer(e.target.value)} className="border px-2 py-1 rounded text-sm" />
-          <input type="date" value={orderDate} onChange={e=>setOrderDate(e.target.value)} className="border px-2 py-1 rounded text-sm" />
+          <input type="text" placeholder="客户名" value={orderCustomer} onChange={e=>setOrderCustomer(e.target.value)} className="border px-2 py-1 rounded text-sm text-black" />
+          <div className="flex items-center gap-1">
+            <span className="text-sm text-black">开始日期：</span>
+            <input type="date" value={orderDateStart} onChange={e=>setOrderDateStart(e.target.value)} className="border px-2 py-1 rounded text-sm text-black" />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-sm text-black">结束日期：</span>
+            <input type="date" value={orderDateEnd} onChange={e=>setOrderDateEnd(e.target.value)} className="border px-2 py-1 rounded text-sm text-black" />
+          </div>
         </div>
         <table className="min-w-full text-xs text-gray-900">
           <thead>

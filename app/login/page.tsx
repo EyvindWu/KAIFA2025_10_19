@@ -31,12 +31,21 @@ export default function LoginPage() {
     },
     {
       id: '3',
-      email: 'user@example.com',
-      password: 'user123',
-      name: t('customerAccount'),
-      role: 'User',
-      description: t('customerAccountDesc'),
+      email: 'andy.liu@example.com',
+      password: 'andy123',
+      name: 'Andy Liu',
+      role: 'Customer (Pending)',
+      description: '普通用户 - 月结申请中',
       avatar: '👤'
+    },
+    {
+      id: '4',
+      email: 'tony.leung@example.com',
+      password: 'tony123',
+      name: 'Tony Leung',
+      role: 'Customer (Approved)',
+      description: '月结用户 - 已授权',
+      avatar: '👨‍💼'
     }
   ];
   const [email, setEmail] = useState('')
@@ -60,7 +69,8 @@ export default function LoginPage() {
       } else if (user.email === 'manager@kaifa.com') {
         router.push('/admin/dashboard')
       } else {
-        router.push('/dashboard')
+        // 普通用户重定向到主页或发货页面
+        router.push('/')
       }
     }
   }, [isAuthenticated, user, router])
@@ -94,7 +104,8 @@ export default function LoginPage() {
         } else if (result.user.email === 'manager@kaifa.com') {
           router.push('/admin/dashboard')
         } else {
-          router.push('/dashboard')
+          // 普通用户重定向到主页
+          router.push('/')
         }
       } else {
         setError(result.message)
@@ -203,6 +214,8 @@ export default function LoginPage() {
                          <span className={`text-xs px-2 py-1 rounded-full ${
                            account.role === 'Super Admin' ? 'bg-red-100 text-red-600' :
                            account.role === 'Admin' ? 'bg-blue-100 text-blue-600' :
+                           account.role === 'Customer (Approved)' ? 'bg-green-100 text-green-600' :
+                           account.role === 'Customer (Pending)' ? 'bg-yellow-100 text-yellow-600' :
                            'bg-gray-100 text-gray-600'
                          }`}>
                            {account.role}
@@ -280,6 +293,30 @@ export default function LoginPage() {
           </form>
 
           {/* Demo Accounts Info */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">测试账户说明</h3>
+            <div className="space-y-2 text-xs text-blue-700">
+              <div className="flex items-center">
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                <strong>System Administrator:</strong> 超级管理员，可访问系统管理面板
+              </div>
+              <div className="flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                <strong>Customer Service Manager:</strong> 客服管理员，可访问客服管理面板
+              </div>
+              <div className="flex items-center">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                <strong>Andy Liu:</strong> 普通用户，月结申请中，只能使用微信支付
+              </div>
+              <div className="flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                <strong>Tony Leung:</strong> 月结用户，已授权，可使用月结支付
+              </div>
+              <div className="text-blue-600 mt-2">
+                点击邮箱输入框可选择预设账户，自动填充登录信息
+              </div>
+            </div>
+          </div>
 
           {/* Links */}
           <div className="mt-6 text-center">

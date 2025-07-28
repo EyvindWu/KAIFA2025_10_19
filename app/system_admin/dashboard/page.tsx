@@ -286,10 +286,10 @@ export default function SystemAdminDashboard() {
             {/* The topRoutes data and rendering were removed as per the edit hint. */}
             <div className="px-6 py-4 text-center text-gray-500">
               {t('topRoutesDataRemoved')}
-            </div>
-          </div>
-        </div>
-      </div>
+                  </div>
+                  </div>
+                </div>
+              </div>
       {/* 系统日志与安全告警区块 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-4">

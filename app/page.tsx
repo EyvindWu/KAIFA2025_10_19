@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Truck, 
@@ -19,20 +19,36 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from './utils/translations'
-import { orderList } from './track/history/orderList'
+import { orderList, andyLiuOrders, tonyLeungOrders } from './track/history/orderList'
 import { personInfoMap } from './track/detail/[trackingNo]/utils'
 import { buildTimeline } from './track/detail/[trackingNo]/utils'
 import { SystemModal } from './components/ClientProviders';
 import { usePathname } from 'next/navigation';
+import { useAuth } from './context/AuthContext';
 
 // Tab按钮统一样式
 const tabBtnClass = 'flex-1 w-1/4 px-6 py-2 font-semibold border-b-2 transition-colors text-center flex items-center justify-center gap-1 text-base h-12'
 
 // 1. 提取渲染条目的函数
-function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, handlePrint: any, handleShare: any, handleRemind: any, remindDisabledMap: any, printDisabledMap: any, remindSentMap: any, onRemindClick: any) {
+function renderPrintShareOrders(
+  mockOrders: any[], 
+  personInfoMap: any, 
+  t: any, 
+  handlePrint: any, 
+  handleShare: any, 
+  handleRemind: any, 
+  remindDisabledMap: any, 
+  printDisabledMap: any, 
+  shareDisabledMap: any, 
+  remindSentMap: any, 
+  onRemindClick: any,
+  activeTooltip: Record<string, 'print' | 'remind' | null>,
+  setActiveTooltip: React.Dispatch<React.SetStateAction<Record<string, 'print' | 'remind' | null>>>
+) {
   return mockOrders.map((order: any, idx: any) => {
     const isRemindDisabled = remindDisabledMap[order.id];
     const isPrintDisabled = printDisabledMap[order.id];
+    const isShareDisabled = shareDisabledMap[order.id];
     const isRemindSent = remindSentMap[order.id];
     // 解析发件人/收件人
     const summaryMatch = order.summary?.match(/^(.*?) → (.*?)(,|，)(.*)$/);
@@ -73,35 +89,107 @@ function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, h
           {/* 最后一行：View all info + 按钮组，移动端同行，PC端分开 */}
           <div className="flex flex-row items-center gap-2 mt-2">
             <Link href={`/track/detail/${order.id}`} className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold text-sm hover:bg-blue-100 transition-colors text-center">{t('view_all_info')}</Link>
+            {/* 打印按钮 */}
+            <div className="flex items-center gap-1 relative">
             <button
-              onClick={() => handlePrint(order)}
-              className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isPrintDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
-              title={t('downloadPdf')}
+                onClick={e => {
+                  if (isPrintDisabled) {
+                    setActiveTooltip(tip => ({ ...tip, [order.id]: tip[order.id] === 'print' ? null : 'print' }));
+                  } else {
+                    handlePrint(order);
+                  }
+                }}
+                className={`tooltip-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isPrintDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isPrintDisabled ? '运单已生成且包裹在途，此阶段不支持重新打印标签' : t('downloadPdf')}
               type="button"
               disabled={isPrintDisabled}
+                tabIndex={isPrintDisabled ? 0 : undefined}
+                aria-describedby={isPrintDisabled ? `print-tooltip-${order.id}` : undefined}
             >
               <Printer className="h-5 w-5" />
               <span className="hidden sm:inline">Print</span>
             </button>
+              {isPrintDisabled && activeTooltip[order.id] === 'print' && (
+                <div
+                  id={`print-tooltip-${order.id}`}
+                  className="tooltip-pop absolute left-1/2 -translate-x-1/2 -top-12 z-20 w-max max-w-xs px-3 py-2 rounded bg-gray-900 text-white text-xs shadow-lg"
+                  role="tooltip"
+                >
+                  运单已生成且包裹在途，此阶段不支持重新打印标签
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-3 h-3 bg-gray-900 rotate-45"></div>
+                </div>
+              )}
+            </div>
+            {/* 分享按钮 */}
+            <div className="flex items-center gap-1">
             <button
               onClick={e => handleShare(order, e)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn"
+                className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn ${isShareDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
               title={t('share')}
               type="button"
+                disabled={isShareDisabled}
             >
               <Share2 className="h-5 w-5" />
               <span className="hidden sm:inline">Share</span>
             </button>
+              {isShareDisabled && (
+                <button
+                  className="flex items-center justify-center w-6 h-6 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition-colors text-xs font-bold"
+                  title="分享功能限制说明"
+                  onClick={() => {
+                    const now = new Date();
+                    const orderDate = order.createdAt ? new Date(order.createdAt) : null;
+                    let message = '';
+                    
+                    if (['Cancelled', 'Exception'].includes(order.status)) {
+                      message = '已取消或失败的订单不提供分享功能';
+                    } else if (order.status === 'Delivered' && orderDate) {
+                      const daysSinceDelivery = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24);
+                      if (daysSinceDelivery > 30) {
+                        message = '包裹签收超过30天，分享链接已失效';
+                      }
+                    } else {
+                      message = '当前订单状态不允许分享';
+                    }
+                    
+                    alert(message);
+                  }}
+                >
+                  !
+                </button>
+              )}
+            </div>
+            {/* 催单按钮 */}
+            <div className="flex items-center gap-1 relative">
             <button
-              onClick={() => onRemindClick(order)}
-              className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isRemindDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
-              title={t('remind')}
+                onClick={e => {
+                  if (isRemindDisabled) {
+                    setActiveTooltip(tip => ({ ...tip, [order.id]: tip[order.id] === 'remind' ? null : 'remind' }));
+                  } else {
+                    onRemindClick(order);
+                  }
+                }}
+                className={`tooltip-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold ${isRemindDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isRemindDisabled ? '运单已生成且包裹在途，此阶段不支持催单功能' : t('remind')}
               type="button"
               disabled={isRemindDisabled}
+                tabIndex={isRemindDisabled ? 0 : undefined}
+                aria-describedby={isRemindDisabled ? `remind-tooltip-${order.id}` : undefined}
             >
               <Bell className="h-5 w-5" />
               <span className="hidden sm:inline">{isRemindSent ? t('reminded') : t('remind')}</span>
             </button>
+              {isRemindDisabled && activeTooltip[order.id] === 'remind' && (
+                <div
+                  id={`remind-tooltip-${order.id}`}
+                  className="tooltip-pop absolute left-1/2 -translate-x-1/2 -top-12 z-20 w-max max-w-xs px-3 py-2 rounded bg-gray-900 text-white text-xs shadow-lg"
+                  role="tooltip"
+                >
+                  运单已生成且包裹在途，此阶段不支持催单功能
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-3 h-3 bg-gray-900 rotate-45"></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -111,10 +199,12 @@ function renderPrintShareOrders(mockOrders: any[], personInfoMap: any, t: any, h
 // 新增分页和7天筛选逻辑
 function getRecentOrders(orders: any[], days = 7) {
   const now = new Date();
-  // 先筛选7天内
+  // 先筛选7天内，但如果是测试数据（2025年），则不过滤
   const filtered = orders.filter(order => {
     if (!order.createdAt) return false;
     const created = new Date(order.createdAt);
+    // 如果是2025年的测试数据，直接返回true
+    if (created.getFullYear() === 2025) return true;
     return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) < days;
   });
   // 优先Pending Pickup，再In Transit，队列内按时间倒序
@@ -139,9 +229,32 @@ export default function HomePage() {
   const [showRemindModal, setShowRemindModal] = useState(false);
   const [remindModalMsg, setRemindModalMsg] = useState('');
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
+  const [activeTooltip, setActiveTooltip] = useState<Record<string, 'print' | 'remind' | null>>({});
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if ((e.target as HTMLElement).closest('.tooltip-btn') || (e.target as HTMLElement).closest('.tooltip-pop')) return;
+      setActiveTooltip({});
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // 根据用户获取相应的订单列表
+  const getUserOrders = () => {
+    if (!isAuthenticated || !user) return orderList; // 默认返回所有订单
+    
+    if (user.email === 'tony.leung@example.com') {
+      return tonyLeungOrders;
+    } else if (user.email === 'andy.liu@example.com') {
+      return andyLiuOrders;
+    } else {
+      return orderList; // 默认返回所有订单
+    }
+  };
 
   // mockOrders同步为Order History的orderList
-  const mockOrders = orderList
+  const mockOrders = getUserOrders();
 
   const handleTrack = () => {
     if (trackingNumber.trim()) {
@@ -363,9 +476,34 @@ export default function HomePage() {
     setShowRemindModal(true);
   };
 
-  // 判断哪些订单不能催单/打印
+  // 判断哪些订单不能催单/打印/分享
   const remindDisabledMap = Object.fromEntries(pagedOrders.map(order => [order.id, ['In Transit', 'Delivered', 'Cancelled'].includes(order.status) || remindSentMap[order.id]]));
-  const printDisabledMap = Object.fromEntries(pagedOrders.map(order => [order.id, ['Pending Pickup', 'Cancelled'].includes(order.status) ? false : true]));
+  const printDisabledMap = Object.fromEntries(pagedOrders.map(order => [order.id, order.status === 'Pending Pickup' ? false : true]));
+  
+  // 分享功能开放逻辑
+  const shareDisabledMap = Object.fromEntries(pagedOrders.map(order => {
+    const now = new Date();
+    const orderDate = order.createdAt ? new Date(order.createdAt) : null;
+    
+    // 已取消或失败的订单
+    if (['Cancelled', 'Exception'].includes(order.status)) {
+      return [order.id, true];
+    }
+    
+    // Delivered状态：检查是否超过30天
+    if (order.status === 'Delivered' && orderDate) {
+      const daysSinceDelivery = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24);
+      return [order.id, daysSinceDelivery > 30];
+    }
+    
+    // Pending Pickup 和 In Transit 状态：允许分享
+    if (['Pending Pickup', 'In Transit'].includes(order.status)) {
+      return [order.id, false];
+    }
+    
+    // 其他状态：不允许分享
+    return [order.id, true];
+  }));
 
   return (
     <div className="min-h-screen bg-[#f6f8fa] max-w-7xl mx-auto px-4 py-8">
@@ -443,7 +581,7 @@ export default function HomePage() {
                         <h3 className="text-xl font-bold text-gray-800 mb-2">{t('recentOrders')}</h3>
                       </div>
                       <div className="space-y-6">
-                        {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, remindSentMap, onRemindClick)}
+                        {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, shareDisabledMap, remindSentMap, onRemindClick, activeTooltip, setActiveTooltip)}
                       </div>
                       {/* 分页器和查看全部按钮 */}
                       <div className="flex flex-col md:flex-row items-center justify-between mt-6 gap-2">
@@ -524,7 +662,7 @@ export default function HomePage() {
                   <div className="mb-4 text-center font-semibold text-gray-700">{t('recentOrders')}</div>
                   {/* 移动端：订单列表，每个条目后紧跟其详情框 */}
                   <div className="space-y-3">
-                    {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, remindSentMap, onRemindClick)}
+                    {renderPrintShareOrders(pagedOrders, personInfoMap, t, handlePrint, handleShare, handleRemind, remindDisabledMap, printDisabledMap, shareDisabledMap, remindSentMap, onRemindClick, activeTooltip, setActiveTooltip)}
                   </div>
                   <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
                     <div className="flex gap-2">

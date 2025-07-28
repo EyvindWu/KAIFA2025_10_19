@@ -272,16 +272,61 @@ export default function TrackOrderDetail() {
               <span className="font-bold text-2xl text-blue-700">{t('orderDetails')}</span>
             </div>
             <div className="flex gap-2">
+              {(() => {
+                const now = new Date();
+                const orderDate = order.createdAt ? new Date(order.createdAt) : null;
+                let isShareDisabled = false;
+                let disableReason = '';
+                
+                // 已取消或失败的订单
+                if (['Cancelled', 'Exception'].includes(order.status)) {
+                  isShareDisabled = true;
+                  disableReason = '已取消或失败的订单不提供分享功能';
+                }
+                // Delivered状态：检查是否超过30天
+                else if (order.status === 'Delivered' && orderDate) {
+                  const daysSinceDelivery = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24);
+                  if (daysSinceDelivery > 30) {
+                    isShareDisabled = true;
+                    disableReason = '包裹签收超过30天，分享链接已失效';
+                  }
+                }
+                // Pending Pickup 和 In Transit 状态：允许分享
+                else if (['Pending Pickup', 'In Transit'].includes(order.status)) {
+                  isShareDisabled = false;
+                }
+                // 其他状态：不允许分享
+                else {
+                  isShareDisabled = true;
+                  disableReason = '当前订单状态不允许分享';
+                }
+                
+                return (
+                  <div className="flex items-center gap-1">
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-lg hover:from-green-500 hover:to-green-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn"
+                      className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-lg hover:from-green-500 hover:to-green-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold share-btn ${isShareDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                 onClick={() => setShowShare(true)}
                 type="button"
+                      disabled={isShareDisabled}
               >
                 <Share2 className="h-5 w-5 mr-1" />
                 <span className="hidden sm:inline">{t('share')}</span>
               </button>
-              {order.status === 'Pending Pickup' && (
-                <>
+                    {isShareDisabled && (
+                      <button
+                        className="flex items-center justify-center w-6 h-6 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition-colors text-xs font-bold"
+                        title="分享功能限制说明"
+                        onClick={() => alert(disableReason)}
+                      >
+                        !
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+              {/* 打印按钮 */}
+              <div className="flex items-center gap-1">
+                {order.status === 'Pending Pickup' ? (
                   <button
                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold"
                     onClick={() => window.print()}
@@ -291,6 +336,33 @@ export default function TrackOrderDetail() {
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 14h12v7H6z" /></svg>
                     <span className="hidden sm:inline">{t('print')}</span>
                   </button>
+                ) : (
+                  <>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg transition-all duration-200 shadow-xl border-0 outline-none font-semibold opacity-50 cursor-not-allowed"
+                      onClick={() => alert('运单已生成且包裹在途，此阶段不支持重新打印标签')}
+                      type="button"
+                      disabled
+                      title="运单已生成且包裹在途，此阶段不支持重新打印标签"
+                    >
+                      {/* Print icon */}
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 14h12v7H6z" /></svg>
+                      <span className="hidden sm:inline">{t('print')}</span>
+                    </button>
+                    <button
+                      className="flex items-center justify-center w-6 h-6 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition-colors text-xs font-bold"
+                      title="打印功能限制说明"
+                      onClick={() => alert('运单已生成且包裹在途，此阶段不支持重新打印标签')}
+                    >
+                      !
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              {/* 催单按钮 */}
+              <div className="flex items-center gap-1">
+                {order.status === 'Pending Pickup' ? (
                   <button
                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-0 outline-none font-semibold"
                     onClick={() => alert(t('remindSent'))}
@@ -300,8 +372,29 @@ export default function TrackOrderDetail() {
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12.001v2.157c0 .538-.214 1.055-.595 1.438L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                     <span className="hidden sm:inline">{t('remind')}</span>
                   </button>
+                ) : (
+                  <>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg transition-all duration-200 shadow-xl border-0 outline-none font-semibold opacity-50 cursor-not-allowed"
+                      onClick={() => alert('运单已生成且包裹在途，此阶段不支持催单功能')}
+                      type="button"
+                      disabled
+                      title="运单已生成且包裹在途，此阶段不支持催单功能"
+                    >
+                      {/* Bell icon */}
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12.001v2.157c0 .538-.214 1.055-.595 1.438L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                      <span className="hidden sm:inline">{t('remind')}</span>
+                    </button>
+                    <button
+                      className="flex items-center justify-center w-6 h-6 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition-colors text-xs font-bold"
+                      title="催单功能限制说明"
+                      onClick={() => alert('运单已生成且包裹在途，此阶段不支持催单功能')}
+                    >
+                      !
+                  </button>
                 </>
               )}
+              </div>
             </div>
           </div>
             {/* 分享气泡 */}

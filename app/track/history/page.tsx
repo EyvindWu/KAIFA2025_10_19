@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { orderList } from './orderList';
+import { orderList, andyLiuOrders, tonyLeungOrders } from './orderList';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, Bell } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
+import { useAuth } from '../../context/AuthContext';
 
 const statusOptions = [
   { value: 'All', label: 'All', color: 'bg-gray-100 text-gray-700' },
@@ -29,6 +30,23 @@ const serviceTypeKeyMap: { [key: string]: string } = {
 
 export default function OrderHistory() {
   const { t } = useTranslation();
+  const { user, isAuthenticated } = useAuth();
+  
+  // 根据用户获取相应的订单列表
+  const getUserOrders = () => {
+    if (!isAuthenticated || !user) return [];
+    
+    if (user.email === 'tony.leung@example.com') {
+      return tonyLeungOrders;
+    } else if (user.email === 'andy.liu@example.com') {
+      return andyLiuOrders;
+    } else {
+      return orderList; // 默认返回所有订单
+    }
+  };
+  
+  const userOrders = getUserOrders();
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateStart, setDateStart] = useState('');
@@ -39,7 +57,7 @@ export default function OrderHistory() {
   const [cityFilter, setCityFilter] = useState('');
   const recipientInputRef = useRef(null);
   const itemsPerPage = 5;
-  let filteredOrders = orderList;
+  let filteredOrders = userOrders;
   if (statusFilter !== 'All') {
     filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
   }
@@ -119,6 +137,23 @@ export default function OrderHistory() {
           {t('backToTrack')}
         </Link>
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">{t('shipmentHistory')}</h1>
+        
+        {/* 用户信息显示 */}
+        {isAuthenticated && user && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-blue-800">
+                <strong>{user.name}</strong>
+                {user.monthlyBillingAuthorized && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">月结已授权</span>
+                )}
+              </div>
+              <div className="text-xs text-blue-600">
+                订单数量: {userOrders.length}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-2 md:gap-3 mb-4">
           <button
             className="flex items-center gap-1 px-4 py-2 font-semibold text-base text-blue-700 bg-white border border-blue-200 rounded-xl shadow-sm hover:bg-blue-50 transition-colors w-fit"

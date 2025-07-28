@@ -231,10 +231,10 @@ export default function BillingPage() {
           </div>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 relative">
+      <main className="max-w-3xl mx-auto px-4 py-8 text-black">
+        <div className="bg-white rounded-lg shadow-md p-8 relative text-black">
           {/* 公司信息 */}
-          <div className="flex flex-col md:flex-row md:justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:justify-between mb-4 text-black">
             <div>
               <div className="font-bold text-lg">{invoice.company.name}</div>
               <div>{invoice.company.address}</div>
@@ -244,24 +244,24 @@ export default function BillingPage() {
               <div>IBAN {invoice.company.iban}</div>
               <div>BIC: {invoice.company.bic}</div>
             </div>
-            <div className="mt-4 md:mt-0 text-right">
+            <div className="mt-4 md:mt-0 text-right text-black">
               <div>Spett.le</div>
               <div>{invoice.client.name}</div>
               <div>{invoice.client.address}</div>
             </div>
           </div>
           {/* 发票基本信息 */}
-          <div className="flex flex-wrap gap-4 mb-4 text-sm">
+          <div className="flex flex-wrap gap-4 mb-4 text-sm text-black">
             <div><span className="font-semibold">N.E DATA DOCUMENTO:</span> {invoice.invoice.number}</div>
             <div><span className="font-semibold">DATA:</span> {invoice.invoice.date}</div>
             <div><span className="font-semibold">CLIENTE:</span> {invoice.client.codiceFiscale}</div>
             <div><span className="font-semibold">PARTITA IVA:</span> {invoice.client.partitaIVA}</div>
             <div><span className="font-semibold">N.PAG.:</span> {invoice.invoice.page}</div>
             <div><span className="font-semibold">MODALITÀ DI PAGAMENTO:</span> {invoice.invoice.payment}</div>
-          </div>
+              </div>
           {/* 明细表格 */}
-          <div className="overflow-x-auto mb-4">
-            <table className="min-w-full border text-xs">
+          <div className="overflow-x-auto mb-4 text-black">
+            <table className="min-w-full border text-xs text-black">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="border px-2 py-1">NS.RIF.</th>
@@ -293,14 +293,14 @@ export default function BillingPage() {
             </table>
           </div>
           {/* 金额汇总区 */}
-          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-            <div>
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4 text-black">
+              <div>
               <div><span className="font-semibold">TOTALE:</span> {invoice.totals.totaleDocumento}</div>
               <div><span className="font-semibold">SC. %:</span> 0,0</div>
               <div><span className="font-semibold">TOTALE NETTO:</span> {invoice.totals.totaleNetto}</div>
               <div><span className="font-semibold">DIRITTO FISSO:</span> {invoice.totals.dirittoFisso}</div>
-            </div>
-            <div>
+              </div>
+              <div>
               <div><span className="font-semibold">SP. BANCARIE:</span> {invoice.totals.speseBancarie}</div>
               <div><span className="font-semibold">ESENZIONI:</span> {invoice.totals.esenzioni}</div>
               <div><span className="font-semibold">BOLLI:</span> {invoice.totals.bolli}</div>
@@ -308,16 +308,16 @@ export default function BillingPage() {
             </div>
           </div>
           {/* 付款与到期日 */}
-          <div className="flex flex-wrap gap-4 text-sm mb-2">
+          <div className="flex flex-wrap gap-4 text-sm mb-2 text-black">
             <div><span className="font-semibold">SCADENZE:</span> {invoice.totals.scadenza}</div>
             <div><span className="font-semibold">IMPORTO:</span> {invoice.totals.totaleDocumento}</div>
           </div>
           {/* 备注区 */}
-          <div className="text-xs text-gray-500 mt-2">Vi preghiamo di verificare l'esattezza dei Vostri dati anagrafici e fiscali, le cui eventuali modifiche dovranno essere tempestivamente comunicate in ottemperanza al D.L.223/06</div>
+          <div className="text-xs text-black mt-2">Vi preghiamo di verificare l'esattezza dei Vostri dati anagrafici e fiscali, le cui eventuali modifiche dovranno essere tempestivamente comunicate in ottemperanza al D.L.223/06</div>
           {/* 下载PDF按钮（占位） */}
           <button className="absolute top-4 right-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
             <Download className="h-5 w-5" /> Scarica PDF
-          </button>
+                      </button>
         </div>
       </main>
 

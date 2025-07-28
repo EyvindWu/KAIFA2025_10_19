@@ -144,6 +144,43 @@ export default function AdminOrders() {
         </div>
       </div>
 
+      {/* 批量催单操作区域 */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+            <div>
+              <h3 className="text-sm font-medium text-yellow-900">批量催单处理</h3>
+              <p className="text-xs text-yellow-700 mt-1">处理所有待揽收订单的催单请求</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors text-sm font-medium"
+              onClick={() => {
+                const pendingOrders = filteredOrders.filter(order => order.status === 'Pending Pickup');
+                if (pendingOrders.length > 0) {
+                  alert(`已处理 ${pendingOrders.length} 个待揽收订单的催单请求`);
+                } else {
+                  alert('当前没有待揽收的订单');
+                }
+              }}
+            >
+              一键处理
+            </button>
+            <button 
+              onClick={() => {
+                alert(`一键处理功能说明：\n\n自动编辑当前列表中所有催单单号并提出催促，发邮件给相应公司UPS/TNT。\n\n如单号全部来自UPS与TNT其中一方则只编辑一封邮件发送至UPS客服邮箱，如单号来自UPS于TNT双方则各编辑一封邮件(内容为各自公司的单号)至UPS/TNT邮箱`);
+              }}
+              className="w-6 h-6 bg-orange-500 text-white rounded-full text-sm font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+              title="查看功能说明"
+            >
+              !
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -232,7 +269,7 @@ export default function AdminOrders() {
                       {order.status === 'Pending Pickup' && (
                         <button
                           className="text-yellow-600 hover:text-yellow-900 p-1 border border-yellow-400 rounded"
-                          title="Remind Pickup"
+                          title="催单：发送催促邮件给相应物流公司UPS/TNT"
                         >
                           Remind
                         </button>

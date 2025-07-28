@@ -11,6 +11,7 @@ export interface User {
   avatar?: string
   permissions: string[]
   lastLogin?: string
+  monthlyBillingAuthorized?: boolean
 }
 
 interface AuthContextType {
@@ -33,7 +34,8 @@ const mockUsers = [
     name: 'System Administrator',
     role: 'super_admin' as const,
     permissions: ['system_settings', 'user_management', 'system_logs', 'database_admin', 'backup_restore'],
-    avatar: '/avatars/admin.jpg'
+    avatar: '/avatars/admin.jpg',
+    monthlyBillingAuthorized: true
   },
   {
     id: '2',
@@ -42,16 +44,28 @@ const mockUsers = [
     name: 'Customer Service Manager',
     role: 'admin' as const,
     permissions: ['orders', 'customers', 'shipments', 'reports', 'billing', 'customer_service'],
-    avatar: '/avatars/manager.jpg'
+    avatar: '/avatars/manager.jpg',
+    monthlyBillingAuthorized: true
   },
   {
     id: '3',
-    email: 'user@example.com',
-    password: 'user123',
+    email: 'andy.liu@example.com',
+    password: 'andy123',
     name: 'Andy Liu',
     role: 'user' as const,
     permissions: ['own_orders', 'own_shipments'],
-    avatar: '/avatars/user.jpg'
+    avatar: '/avatars/andy.jpg',
+    monthlyBillingAuthorized: false
+  },
+  {
+    id: '4',
+    email: 'tony.leung@example.com',
+    password: 'tony123',
+    name: 'Tony Leung',
+    role: 'user' as const,
+    permissions: ['own_orders', 'own_shipments'],
+    avatar: '/avatars/tony.jpg',
+    monthlyBillingAuthorized: true
   }
 ]
 
@@ -91,7 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: foundUser.role,
         avatar: foundUser.avatar,
         permissions: foundUser.permissions,
-        lastLogin: new Date().toISOString()
+        lastLogin: new Date().toISOString(),
+        monthlyBillingAuthorized: foundUser.monthlyBillingAuthorized
       }
       
       setUser(userData)

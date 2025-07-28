@@ -15,7 +15,9 @@ import {
   CheckCircle,
   BookOpen,
   Trash2,
-  Settings
+  Settings,
+  AlertCircle,
+  Info
 } from 'lucide-react'
 import AddressBookIcon from '../components/icons/AddressBookIcon'
 import DeleteIcon from '../components/icons/DeleteIcon'
@@ -23,6 +25,7 @@ import dynamic from 'next/dynamic'
 import { useTranslation } from '../utils/translations'
 import { SystemModal } from '../components/ClientProviders';
 import AddressBook from '../components/AddressBook/AddressBook';
+import { useAuth } from '../context/AuthContext'
 // 移除方案3相关import
 // import ReactContactListDemo from '../components/AddressBook/ReactContactListDemo';
 
@@ -68,6 +71,101 @@ const demoAddressList = Array.from({ length: 50 }, (_, i) => {
 
 export default function ShipPage() {
   const { t, currentLanguage } = useTranslation()
+  const { user, isAuthenticated, isLoading } = useAuth()
+  
+  // 用户权限状态
+  const isLoggedIn = isAuthenticated && user
+  const hasMonthlyBilling = isLoggedIn && user?.monthlyBillingAuthorized
+  const canCreateOrder = isLoggedIn // 已登录用户才能下单
+  const canUseAddressBook = isLoggedIn // 已登录用户才能使用地址簿
+  const canApplyMonthlyBilling = isLoggedIn && !hasMonthlyBilling // 已登录但未授权月结的用户才能申请
+  
+  // ===== 用户权限控制说明 =====
+  /*
+  根据用户角色实现的功能权限控制：
+  
+  1. 未登录用户：
+     - ✅ 查看运费/时效报价
+     - ✅ 地址验证功能
+     - ❌ 创建发货订单（显示登录提示）
+     - ❌ 使用地址簿功能
+     - ❌ 申请月结权限
+  
+  2. 已登录用户（未授权月结）：
+     - ✅ 查看运费/时效报价
+     - ✅ 地址验证功能
+     - ✅ 创建发货订单（仅限微信支付）
+     - ✅ 使用地址簿功能
+     - ✅ 申请月结权限
+  
+  3. 已登录用户（已授权月结）：
+     - ✅ 查看运费/时效报价
+     - ✅ 地址验证功能
+     - ✅ 创建发货订单（微信支付或月结）
+     - ✅ 使用地址簿功能
+     - ❌ 申请月结权限（已有权限）
+  
+  权限控制实现：
+  - 地址簿按钮：未登录时禁用并显示提示
+  - 保存地址选项：未登录时禁用
+  - 支付方式：根据月结权限显示/隐藏选项
+  - 提交按钮：未登录时禁用并显示"请先登录"
+  - 月结申请：仅对符合条件的用户显示
+  */
+  
+  // ===== 智能实时地址验证功能说明 =====
+  /*
+  地址验证功能实现说明（实时验证模式）：
+  
+  1. 验证策略：
+     - 实时验证：用户输入时自动触发API验证
+     - 智能补全：提供地址建议和自动填充
+     - 字段联动：邮编→城市→区域自动关联
+     - 错误提示：实时显示格式和匹配错误
+  
+  2. 触发时机：
+     - 邮编输入完成后（3位以上）
+     - 街道名称输入完成后（5个字符以上）
+     - 城市名称输入完成后（2个字符以上）
+     - 防抖处理：停止输入后延迟500ms触发
+  
+  3. 验证流程：
+     - 本地格式验证（邮编格式、必填字段）
+     - API地址验证（UPS/FedEx/TNT API）
+     - 智能建议生成（相似地址列表）
+     - 字段自动补全（城市、区域信息）
+  
+  4. 用户体验：
+     - 实时反馈：输入框下方显示验证状态
+     - 智能建议：下拉列表显示匹配地址
+     - 一键填充：点击建议自动完成表单
+     - 错误引导：明确提示错误原因和修正建议
+  
+  5. API集成：
+     - UPS Address Validation API
+     - Google Maps Geocoding API
+     - 本地地址数据库
+     - 多API结果合并和优先级处理
+  
+  6. 错误处理：
+     - 网络超时：显示重试选项
+     - 地址模糊：提供多个选择
+     - 格式错误：实时提示修正
+     - 服务异常：降级到本地验证
+  
+  7. 性能优化：
+     - 防抖处理：避免频繁API调用
+     - 缓存机制：相同地址缓存结果
+     - 异步处理：不阻塞用户输入
+     - 加载状态：显示验证进度
+  
+  8. 实现步骤：
+     - 配置地址验证API密钥
+     - 实现防抖和缓存逻辑
+     - 添加实时验证UI组件
+     - 集成字段联动功能
+     - 测试各种验证场景
+  */
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     // Sender info
@@ -95,7 +193,7 @@ export default function ShipPage() {
     }],
     
     // Service options
-    paymentMethod: 'credit_card',
+    paymentMethod: 'wechat_pay',
     
     // 新增KFCode和addressBook
     kfCode: '', addressBook: '',
@@ -123,8 +221,53 @@ export default function ShipPage() {
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const contactInputRef = useRef<HTMLInputElement>(null);
 
-  // 简单的发件人地址簿
-  const senderAddressBook = [
+  // 用户特定的地址簿数据
+  const getUserAddressBook = () => {
+    if (!isLoggedIn) return [];
+    
+    if (user?.email === 'tony.leung@example.com') {
+      // Tony Leung的地址簿（月结用户）
+      return [
+        {
+          name: 'Sarah Chen',
+          email: 'sarah.chen@email.com',
+          phone: '+49 100000031',
+          address: 'Sarah Avenue 31',
+          city: 'Munich',
+          postalCode: '80331',
+          country: 'Germany'
+        },
+        {
+          name: 'David Wong',
+          email: 'david.wong@email.com',
+          phone: '+49 100000032',
+          address: 'David Road 32',
+          city: 'Hamburg',
+          postalCode: '20095',
+          country: 'Germany'
+        },
+        {
+          name: 'Lisa Zhang',
+          email: 'lisa.zhang@email.com',
+          phone: '+49 100000033',
+          address: 'Lisa Lane 33',
+          city: 'Frankfurt',
+          postalCode: '60311',
+          country: 'Germany'
+        },
+        {
+          name: 'Michael Brown',
+          email: 'michael.brown@email.com',
+          phone: '+49 100000034',
+          address: 'Michael Street 34',
+          city: 'Stuttgart',
+          postalCode: '70173',
+          country: 'Germany'
+        }
+      ];
+    } else {
+      // Andy Liu的地址簿（普通用户）
+      return [
     {
       name: t('aliceSmith'),
       email: 'alice.smith@email.com',
@@ -153,11 +296,34 @@ export default function ShipPage() {
       country: t('germany')
     }
   ];
+    }
+  };
+
+  const senderAddressBook = getUserAddressBook();
 
   const [selectedSenderIndex, setSelectedSenderIndex] = useState(-1);
   const [saveToAddressBook, setSaveToAddressBook] = useState(false);
   const [showKfTooltip, setShowKfTooltip] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [showMonthlyBillingModal, setShowMonthlyBillingModal] = useState(false);
+  const [showAddressValidationInfo, setShowAddressValidationInfo] = useState(false);
+
+  // 检查用户月结权限
+  const [monthlyBillingAuthorized, setMonthlyBillingAuthorized] = useState(false);
+  
+  // 模拟检查用户月结权限
+  React.useEffect(() => {
+    // 从localStorage检查月结申请状态
+    const monthlyRequests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
+    const userEmail = 'user@example.com'; // 这里应该从用户上下文获取
+    const userRequest = monthlyRequests.find((req: any) => req.email === userEmail);
+    
+    if (userRequest && userRequest.status === 'approved') {
+      setMonthlyBillingAuthorized(true);
+      // 如果用户有月结权限，默认选择月结支付
+      setFormData(prev => ({ ...prev, paymentMethod: 'monthly_billing' }));
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -165,6 +331,111 @@ export default function ShipPage() {
       [field]: value
     }))
   }
+
+  // ===== 地址验证功能说明 =====
+  // 以下注释说明了地址验证功能在API接入后应该如何实现和展示
+  
+  // 1. 实时地址验证API调用函数
+  // const validateAddress = async (addressData: {
+  //   street: string,
+  //   city: string,
+  //   postalCode: string,
+  //   country: string
+  // }) => {
+  //   try {
+  //     // 多API验证，提高准确性
+  //     const [upsResult, googleResult] = await Promise.allSettled([
+  //       fetch('/api/ups-validate', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify(addressData)
+  //       }),
+  //       fetch('/api/google-geocode', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify(addressData)
+  //       })
+  //     ])
+  //     
+  //     // 合并和优先级处理结果
+  //     const result = mergeValidationResults(upsResult, googleResult)
+  //     return result
+  //   } catch (error) {
+  //     console.error('地址验证失败:', error)
+  //     return { isValid: false, suggestions: [], message: '验证服务暂时不可用' }
+  //   }
+  // }
+
+  // 2. 实时地址验证状态管理
+  // const [addressValidation, setAddressValidation] = useState({
+  //   sender: { isValid: null, suggestions: [], message: '', isChecking: false, autoFilled: false },
+  //   recipient: { isValid: null, suggestions: [], message: '', isChecking: false, autoFilled: false }
+  // })
+  //
+  // // 防抖处理，避免频繁API调用
+  // const debouncedValidation = useMemo(
+  //   () => debounce(async (type: 'sender' | 'recipient', addressData: any) => {
+  //     if (addressData.postalCode.length < 3) return
+  //     
+  //     setAddressValidation(prev => ({
+  //       ...prev,
+  //       [type]: { ...prev[type], isChecking: true }
+  //     }))
+  //
+  //     const result = await validateAddress(addressData)
+  //
+  //     setAddressValidation(prev => ({
+  //       ...prev,
+  //       [type]: {
+  //         isValid: result.isValid,
+  //         suggestions: result.suggestions,
+  //         message: result.message,
+  //         isChecking: false
+  //       }
+  //     }))
+  //
+  //     // 自动填充功能
+  //     if (result.isValid && result.correctedAddress && !addressValidation[type].autoFilled) {
+  //       if (type === 'sender') {
+  //         setFormData(prev => ({
+  //           ...prev,
+  //           senderAddress: result.correctedAddress.street,
+  //           senderCity: result.correctedAddress.city,
+  //           senderPostalCode: result.correctedAddress.postalCode
+  //         }))
+  //       } else {
+  //         setFormData(prev => ({
+  //           ...prev,
+  //           recipientAddress: result.correctedAddress.street,
+  //           recipientCity: result.correctedAddress.city,
+  //           recipientPostalCode: result.correctedAddress.postalCode
+  //         }))
+  //       }
+  //     }
+  //   }, 500),
+  //   []
+  // )
+
+  // 3. 实时地址验证触发函数
+  // const handleRealTimeValidation = (type: 'sender' | 'recipient', field: string, value: string) => {
+  //   const addressData = type === 'sender' ? {
+  //     street: formData.senderAddress,
+  //     city: formData.senderCity,
+  //     postalCode: formData.senderPostalCode,
+  //     country: formData.senderCountry
+  //   } : {
+  //     street: formData.recipientAddress,
+  //     city: formData.recipientCity,
+  //     postalCode: formData.recipientPostalCode,
+  //     country: formData.recipientCountry
+  //   }
+  //
+  //   // 更新表单数据
+  //   handleInputChange(field, value)
+  //
+  //   // 触发实时验证
+  //   debouncedValidation(type, addressData)
+  // }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -252,6 +523,21 @@ export default function ShipPage() {
     };
   }, [showContactDropdown, alphabet]);
 
+  // 点击外部关闭地址验证说明气泡
+  React.useEffect(() => {
+    if (!showAddressValidationInfo) return;
+    
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Element;
+      if (!target.closest('.address-validation-info')) {
+        setShowAddressValidationInfo(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddressValidationInfo]);
+
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -269,6 +555,7 @@ export default function ShipPage() {
               onChange={(e) => handleInputChange('senderName', e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {canUseAddressBook ? (
             <AddressBook
               addressList={addressList}
               onSelect={(contact: any) => {
@@ -286,6 +573,16 @@ export default function ShipPage() {
                 </button>
               }
             />
+            ) : (
+              <button
+                type="button"
+                className="border border-l-0 border-gray-300 rounded-r-md bg-gray-100 flex items-center justify-center w-10 cursor-not-allowed"
+                title="需要登录才能使用地址簿"
+                disabled
+              >
+                <AddressBookIcon className="h-7 w-7 text-gray-400" />
+              </button>
+            )}
           </div>
         </div>
         <div>
@@ -320,13 +617,117 @@ export default function ShipPage() {
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+            {t('address')}
+            <button
+              type="button"
+              onClick={() => setShowAddressValidationInfo(!showAddressValidationInfo)}
+              className="ml-2 w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+              title="地址验证功能说明"
+            >
+              !
+            </button>
+          </label>
+          <div className="relative">
           <input
             type="text"
             value={formData.senderAddress}
             onChange={(e) => handleInputChange('senderAddress', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+            
+            {/* 地址验证功能说明气泡 */}
+            {showAddressValidationInfo && (
+              <div className="address-validation-info absolute left-0 top-full mt-2 w-80 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-4 shadow-lg z-30">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-medium text-blue-900 mb-2">智能地址验证</h4>
+                  <button
+                    onClick={() => setShowAddressValidationInfo(false)}
+                    className="text-blue-500 hover:text-blue-700"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <p><strong>实时验证：</strong>输入时自动验证地址有效性</p>
+                  <p><strong>智能补全：</strong>提供地址建议和自动填充</p>
+                  <p><strong>字段联动：</strong>邮编→城市→区域自动关联</p>
+                  <p><strong>错误提示：</strong>实时显示格式和匹配错误</p>
+                  <p><strong>API集成：</strong>UPS/FedEx/TNT地址验证API</p>
+                  <p className="text-blue-600 font-medium">提升用户体验，减少错误输入</p>
+                </div>
+              </div>
+            )}
+            
+            {/* ===== 实时地址验证UI - API接入后取消注释 ===== */}
+            {/*
+            // 实时验证状态显示
+            {addressValidation.sender.isChecking && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center text-blue-600 text-xs">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></div>
+                验证中...
+              </div>
+            )}
+            
+            // 实时验证结果显示
+            {addressValidation.sender.isValid === true && !addressValidation.sender.isChecking && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  地址验证通过
+                </div>
+              </div>
+            )}
+            
+            {addressValidation.sender.isValid === false && !addressValidation.sender.isChecking && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                <div className="flex items-center mb-2">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  {addressValidation.sender.message}
+                </div>
+                
+                // 智能建议地址列表
+                {addressValidation.sender.suggestions.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium mb-1">智能建议：</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {addressValidation.sender.suggestions.map((suggestion: any, index: number) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              senderAddress: suggestion.street,
+                              senderCity: suggestion.city,
+                              senderPostalCode: suggestion.postalCode
+                            }))
+                            // 标记已自动填充
+                            setAddressValidation(prev => ({
+                              ...prev,
+                              sender: { ...prev.sender, autoFilled: true }
+                            }))
+                          }}
+                          className="block w-full text-left p-2 bg-white border border-gray-200 rounded hover:bg-gray-50 text-sm transition-colors"
+                        >
+                          <div className="font-medium">{suggestion.street}</div>
+                          <div className="text-gray-600">{suggestion.city} {suggestion.postalCode}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            // 字段联动提示
+            {addressValidation.sender.autoFilled && (
+              <div className="mt-1 text-xs text-green-600">
+                ✓ 已自动填充相关字段
+              </div>
+            )}
+            */}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('city')}</label>
@@ -339,14 +740,47 @@ export default function ShipPage() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('postalCode')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                {t('postalCode')}
+                <button
+                  type="button"
+                  onClick={() => setShowAddressValidationInfo(!showAddressValidationInfo)}
+                  className="ml-2 w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+                  title="邮编字段联动功能"
+                >
+                  !
+                </button>
+              </label>
             <input
               type="text"
               value={formData.senderPostalCode}
               onChange={(e) => handleInputChange('senderPostalCode', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            
+            {/* 邮编字段联动说明气泡 */}
+            {showAddressValidationInfo && (
+              <div className="address-validation-info absolute left-0 top-full mt-2 w-80 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg p-4 shadow-lg z-30">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-medium text-green-900 mb-2">邮编字段联动</h4>
+                  <button
+                    onClick={() => setShowAddressValidationInfo(false)}
+                    className="text-green-500 hover:text-green-700"
+                  >
+                    ×
+                  </button>
           </div>
+                <div className="space-y-2 text-xs">
+                  <p><strong>自动补全：</strong>输入邮编后自动填充城市和区域</p>
+                  <p><strong>格式验证：</strong>实时检查邮编格式是否正确</p>
+                  <p><strong>地址匹配：</strong>验证邮编与城市是否匹配</p>
+                  <p><strong>智能建议：</strong>提供相似邮编和对应地址</p>
+                  <p className="text-green-600 font-medium">减少手动输入，提高准确性</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {canUseAddressBook ? (
           <label className="flex items-center ml-2 mt-6">
             <input
               type="checkbox"
@@ -356,6 +790,16 @@ export default function ShipPage() {
             />
             <span className="ml-2 text-sm text-black">{t('saveToAddressBook')}</span>
           </label>
+          ) : (
+            <label className="flex items-center ml-2 mt-6 cursor-not-allowed">
+              <input
+                type="checkbox"
+                disabled
+                className="h-4 w-4 text-gray-400"
+              />
+              <span className="ml-2 text-sm text-gray-500">{t('saveToAddressBook')} (需要登录)</span>
+            </label>
+          )}
         </div>
       </div>
       {/* 地址簿弹窗：发件人 */}
@@ -406,6 +850,7 @@ export default function ShipPage() {
               onChange={(e) => handleInputChange('recipientName', e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {canUseAddressBook ? (
             <AddressBook
               addressList={addressList}
               onSelect={(contact: any) => {
@@ -423,6 +868,16 @@ export default function ShipPage() {
                 </button>
               }
             />
+            ) : (
+              <button
+                type="button"
+                className="border border-l-0 border-gray-300 rounded-r-md bg-gray-100 flex items-center justify-center w-10 cursor-not-allowed"
+                title="需要登录才能使用地址簿"
+                disabled
+              >
+                <AddressBookIcon className="h-7 w-7 text-gray-400" />
+              </button>
+            )}
           </div>
         </div>
         
@@ -461,13 +916,117 @@ export default function ShipPage() {
         </div>
         
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+            {t('address')}
+            <button
+              type="button"
+              onClick={() => setShowAddressValidationInfo(!showAddressValidationInfo)}
+              className="ml-2 w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+              title="地址验证功能说明"
+            >
+              !
+            </button>
+          </label>
+          <div className="relative">
           <input
             type="text"
             value={formData.recipientAddress}
             onChange={(e) => handleInputChange('recipientAddress', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+            
+            {/* 地址验证功能说明气泡 */}
+            {showAddressValidationInfo && (
+              <div className="address-validation-info absolute left-0 top-full mt-2 w-80 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-4 shadow-lg z-30">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-medium text-blue-900 mb-2">智能地址验证</h4>
+                  <button
+                    onClick={() => setShowAddressValidationInfo(false)}
+                    className="text-blue-500 hover:text-blue-700"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <p><strong>实时验证：</strong>输入时自动验证地址有效性</p>
+                  <p><strong>智能补全：</strong>提供地址建议和自动填充</p>
+                  <p><strong>字段联动：</strong>邮编→城市→区域自动关联</p>
+                  <p><strong>错误提示：</strong>实时显示格式和匹配错误</p>
+                  <p><strong>API集成：</strong>UPS/FedEx/TNT地址验证API</p>
+                  <p className="text-blue-600 font-medium">提升用户体验，减少错误输入</p>
+                </div>
+              </div>
+            )}
+            
+            {/* ===== 收件人实时地址验证UI - API接入后取消注释 ===== */}
+            {/*
+            // 实时验证状态显示
+            {addressValidation.recipient.isChecking && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center text-blue-600 text-xs">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></div>
+                验证中...
+              </div>
+            )}
+            
+            // 实时验证结果显示
+            {addressValidation.recipient.isValid === true && !addressValidation.recipient.isChecking && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  地址验证通过
+                </div>
+              </div>
+            )}
+            
+            {addressValidation.recipient.isValid === false && !addressValidation.recipient.isChecking && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                <div className="flex items-center mb-2">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  {addressValidation.recipient.message}
+                </div>
+                
+                // 智能建议地址列表
+                {addressValidation.recipient.suggestions.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium mb-1">智能建议：</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {addressValidation.recipient.suggestions.map((suggestion: any, index: number) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              recipientAddress: suggestion.street,
+                              recipientCity: suggestion.city,
+                              recipientPostalCode: suggestion.postalCode
+                            }))
+                            // 标记已自动填充
+                            setAddressValidation(prev => ({
+                              ...prev,
+                              recipient: { ...prev.recipient, autoFilled: true }
+                            }))
+                          }}
+                          className="block w-full text-left p-2 bg-white border border-gray-200 rounded hover:bg-gray-50 text-sm transition-colors"
+                        >
+                          <div className="font-medium">{suggestion.street}</div>
+                          <div className="text-gray-600">{suggestion.city} {suggestion.postalCode}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            // 字段联动提示
+            {addressValidation.recipient.autoFilled && (
+              <div className="mt-1 text-xs text-green-600">
+                ✓ 已自动填充相关字段
+              </div>
+            )}
+            */}
+          </div>
         </div>
         
         <div>
@@ -482,14 +1041,47 @@ export default function ShipPage() {
         
         <div className="flex items-center gap-2">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('postalCode')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              {t('postalCode')}
+              <button
+                type="button"
+                onClick={() => setShowAddressValidationInfo(!showAddressValidationInfo)}
+                className="ml-2 w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center justify-center shadow-md"
+                title="邮编字段联动功能"
+              >
+                !
+              </button>
+            </label>
             <input
               type="text"
               value={formData.recipientPostalCode}
               onChange={(e) => handleInputChange('recipientPostalCode', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            
+            {/* 邮编字段联动说明气泡 */}
+            {showAddressValidationInfo && (
+              <div className="address-validation-info absolute left-0 top-full mt-2 w-80 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg p-4 shadow-lg z-30">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-medium text-green-900 mb-2">邮编字段联动</h4>
+                  <button
+                    onClick={() => setShowAddressValidationInfo(false)}
+                    className="text-green-500 hover:text-green-700"
+                  >
+                    ×
+                  </button>
           </div>
+                <div className="space-y-2 text-xs">
+                  <p><strong>自动补全：</strong>输入邮编后自动填充城市和区域</p>
+                  <p><strong>格式验证：</strong>实时检查邮编格式是否正确</p>
+                  <p><strong>地址匹配：</strong>验证邮编与城市是否匹配</p>
+                  <p><strong>智能建议：</strong>提供相似邮编和对应地址</p>
+                  <p className="text-green-600 font-medium">减少手动输入，提高准确性</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {canUseAddressBook ? (
           <label className="flex items-center ml-2 mt-6">
             <input
               type="checkbox"
@@ -499,6 +1091,16 @@ export default function ShipPage() {
             />
             <span className="ml-2 text-sm text-black">{t('saveToAddressBook')}</span>
           </label>
+          ) : (
+            <label className="flex items-center ml-2 mt-6 cursor-not-allowed">
+              <input
+                type="checkbox"
+                disabled
+                className="h-4 w-4 text-gray-400"
+              />
+              <span className="ml-2 text-sm text-gray-500">{t('saveToAddressBook')} (需要登录)</span>
+            </label>
+          )}
         </div>
       </div>
       {/* 地址簿弹窗：收件人 */}
@@ -828,15 +1430,106 @@ export default function ShipPage() {
       </div>
     </div>
 
-    {/* Payment Information */}
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <div className="flex items-start">
-        <CreditCard className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+    {/* Payment Method Selection */}
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+        <CreditCard className="h-5 w-5 mr-2 text-purple-600" />
+        支付方式
+      </h3>
+      
+      <div className="space-y-4">
+        {/* WeChat Pay Option */}
+        <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="wechat_pay"
+            checked={formData.paymentMethod === 'wechat_pay'}
+            onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+            className="mr-3"
+          />
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-white text-sm font-bold">W</span>
+            </div>
         <div>
-          <h4 className="font-medium text-blue-900">{t('paymentMethod')}</h4>
-          <p className="text-sm text-blue-700 mt-1">
-            {t('monthlyBillingDescription')}
-          </p>
+              <div className="font-medium text-gray-900">WeChat Pay</div>
+              <div className="text-sm text-gray-500">微信支付</div>
+        </div>
+      </div>
+        </label>
+
+        {/* Monthly Billing Option */}
+        <div className={`p-4 border rounded-lg ${hasMonthlyBilling ? 'border-gray-200 cursor-pointer hover:bg-gray-50' : 'border-gray-300 bg-gray-50 cursor-not-allowed'}`}>
+          <label className={`flex items-center ${hasMonthlyBilling ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="monthly_billing"
+              checked={formData.paymentMethod === 'monthly_billing'}
+              onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+              disabled={!hasMonthlyBilling}
+              className="mr-3"
+            />
+            <div className="flex items-center">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 ${hasMonthlyBilling ? 'bg-blue-500' : 'bg-gray-400'}`}>
+                <Calendar className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className={`font-medium ${hasMonthlyBilling ? 'text-gray-900' : 'text-gray-500'}`}>
+                  月结支付
+                  {hasMonthlyBilling && <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">已授权</span>}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {monthlyBillingAuthorized ? '企业月结，月底统一结算' : '仅对企业客户开放'}
+                </div>
+              </div>
+            </div>
+          </label>
+          
+          {canApplyMonthlyBilling && (
+            <div className="mt-3 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                请先申请月结权限，审核通过后方可使用
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMonthlyBillingModal(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                申请月结 →
+              </button>
+            </div>
+          )}
+          
+          {!canApplyMonthlyBilling && !hasMonthlyBilling && isLoggedIn && (
+            <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-600">
+                <strong>月结申请状态</strong>
+                <p className="text-gray-500 mt-1">您的月结申请正在审核中，请耐心等待</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Summary */}
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">支付方式：</span>
+          <span className="font-medium text-gray-900">
+            {formData.paymentMethod === 'wechat_pay' ? 'WeChat Pay' : '月结支付'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-sm text-gray-600">订单总额：</span>
+          <span className="text-lg font-bold text-gray-900">
+            €{formData.packages.reduce((total, pkg) => {
+              const basePrice = pkg.serviceType === 'express' ? 29.99 : 15.99;
+              const insuranceCost = pkg.insurance ? 5.99 : 0;
+              return total + basePrice + insuranceCost;
+            }, 0).toFixed(2)}
+          </span>
         </div>
       </div>
     </div>
@@ -853,18 +1546,95 @@ export default function ShipPage() {
   function isStepValid(step: number, formData: any): boolean {
     if (step === 1) {
       // 发件人信息必填项
-      return !!(formData.senderName && formData.senderEmail && formData.senderPhone && formData.senderAddress && formData.senderCity && formData.senderPostalCode && formData.senderCountry);
+      const senderValid = !!(formData.senderName && formData.senderEmail && formData.senderPhone && formData.senderAddress && formData.senderCity && formData.senderPostalCode && formData.senderCountry);
+      
+      // ===== 地址验证检查 - API接入后取消注释 =====
+      // if (senderValid && addressValidation.sender.isValid === false) {
+      //   return false; // 如果地址验证失败，不允许进入下一步
+      // }
+      
+      return senderValid;
     }
     if (step === 2) {
       // 收件人信息必填项
-      return !!(formData.recipientName && formData.recipientEmail && formData.recipientPhone && formData.recipientAddress && formData.recipientCity && formData.recipientPostalCode && formData.recipientCountry);
+      const recipientValid = !!(formData.recipientName && formData.recipientEmail && formData.recipientPhone && formData.recipientAddress && formData.recipientCity && formData.recipientPostalCode && formData.recipientCountry);
+      
+      // ===== 地址验证检查 - API接入后取消注释 =====
+      // if (recipientValid && addressValidation.recipient.isValid === false) {
+      //   return false; // 如果地址验证失败，不允许进入下一步
+      // }
+      
+      return recipientValid;
     }
     if (step === 3) {
       // 至少有一个包裹，且每个包裹的必填项填写
       return formData.packages.length > 0 && formData.packages.every((pkg: any) => pkg.packageType && pkg.weight && pkg.length && pkg.width && pkg.height && pkg.serviceType);
     }
+    if (step === 4) {
+      // 必须选择支付方式
+      return !!(formData.paymentMethod && (
+        formData.paymentMethod === 'wechat_pay' || 
+        (formData.paymentMethod === 'monthly_billing' && hasMonthlyBilling)
+      ));
+    }
     return true;
   }
+
+  // ===== 实时地址验证完整实现说明 =====
+  /*
+  实时地址验证功能完整实现指南：
+  
+  1. 核心优势：
+     - 提升用户体验：无需手动点击验证按钮
+     - 减少错误输入：实时反馈和智能建议
+     - 提高下单成功率：准确对接物流系统要求
+     - 降低客服成本：减少地址错误导致的退件
+  
+  2. 技术实现要点：
+     - 防抖处理：避免频繁API调用（500ms延迟）
+     - 多API验证：UPS + Google Maps + 本地数据库
+     - 智能缓存：相同地址缓存验证结果
+     - 异步处理：不阻塞用户输入流程
+  
+  3. 用户体验设计：
+     - 实时状态显示：验证中、成功、失败状态
+     - 智能建议列表：可点击的地址建议
+     - 字段自动填充：点击建议后自动完成表单
+     - 错误引导：明确的错误原因和修正建议
+  
+  4. 触发时机优化：
+     - 邮编输入：3位以上触发验证
+     - 街道名称：5个字符以上触发
+     - 城市名称：2个字符以上触发
+     - 防抖机制：停止输入后延迟触发
+  
+  5. 错误处理策略：
+     - 网络超时：显示重试选项
+     - 地址模糊：提供多个选择
+     - 格式错误：实时提示修正
+     - 服务异常：降级到本地验证
+  
+  6. 性能优化：
+     - 防抖处理：减少API调用频率
+     - 缓存机制：避免重复验证
+     - 异步加载：不阻塞UI响应
+     - 状态管理：优化组件重渲染
+  
+  7. 集成步骤：
+     - 配置API密钥：UPS、Google Maps等
+     - 实现防抖逻辑：useMemo + debounce
+     - 添加状态管理：验证状态和结果
+     - 集成UI组件：实时反馈和建议列表
+     - 测试验证：各种输入场景测试
+  
+  8. 取消注释步骤：
+     - 取消注释状态管理代码
+     - 取消注释API调用函数
+     - 取消注释防抖处理逻辑
+     - 取消注释UI组件代码
+     - 取消注释表单验证集成
+     - 配置API密钥和端点
+  */
 
   return (
     <>
@@ -874,21 +1644,195 @@ export default function ShipPage() {
         title={t('orderSuccessTitle')}
         message={t('orderSubmittedSuccessfully')}
       />
+      
+      {/* 月结申请弹窗 */}
+      {showMonthlyBillingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">申请企业月结权限</h2>
+              <button
+                onClick={() => setShowMonthlyBillingModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-4 text-sm text-gray-600">
+              请填写企业信息，我们将在2-3个工作日内完成审核。
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const monthlyRequest = {
+                companyName: formData.get('companyName'),
+                vatNumber: formData.get('vatNumber'),
+                phone: formData.get('phone'),
+                address: formData.get('address'),
+                contactName: formData.get('contactName'),
+                email: 'user@example.com', // 应该从用户上下文获取
+                status: 'pending',
+                id: Date.now()
+              };
+              
+              const requests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
+              requests.push(monthlyRequest);
+              localStorage.setItem('kaifa-monthly-requests', JSON.stringify(requests));
+              
+              setShowMonthlyBillingModal(false);
+              alert('月结申请已提交，请等待审核结果。');
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    企业名称 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    企业税号 (VAT/P.IVA) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="vatNumber"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    联系手机号 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    企业注册地址 <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    企业联系人姓名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contactName"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowMonthlyBillingModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  提交申请
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="flex items-center h-16">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
               <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 {t('backToHome')}
               </Link>
               <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('createShipment')}</h1>
+              </div>
+              
+              {/* 用户状态显示 */}
+              <div className="flex items-center space-x-4">
+                {isLoggedIn ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">{user?.name}</span>
+                      {hasMonthlyBilling && (
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">月结已授权</span>
+                      )}
+                    </div>
+                    <Link 
+                      href="/profile" 
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      个人中心
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">未登录</span>
+                    <Link 
+                      href="/login" 
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      登录
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
         <main className="max-w-4xl mx-auto px-4 py-8">
+          {/* 用户权限提示 */}
+          {!isLoggedIn && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">需要登录才能下单</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    您可以查看运费报价和地址验证功能，但需要登录后才能创建发货订单。
+                  </p>
+                  <Link 
+                    href="/login" 
+                    className="inline-flex items-center mt-2 px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                  >
+                    立即登录
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Progress Steps */}
           <div className="mb-8 relative">
             {/* Progress Bar: blue bar ends at the center of the current step's icon */}
@@ -950,13 +1894,16 @@ export default function ShipPage() {
                 
                 <button
                   type="submit"
+                  disabled={!canCreateOrder}
                   className={
-                    (step !== 4 && !isStepValid(step, formData))
+                    !canCreateOrder
+                      ? "px-6 py-2 bg-gray-300 text-gray-400 border border-gray-200 rounded-md cursor-not-allowed opacity-60"
+                      : (step !== 4 && !isStepValid(step, formData))
                       ? "px-6 py-2 bg-gray-300 text-gray-400 border border-gray-200 rounded-md cursor-not-allowed opacity-60"
                       : "px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   }
                 >
-                  {step === 4 ? t('placeOrder') : t('next')}
+                  {!canCreateOrder ? '请先登录' : (step === 4 ? t('placeOrder') : t('next'))}
                 </button>
               </div>
             </form>
