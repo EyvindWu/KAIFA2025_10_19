@@ -668,20 +668,31 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   const [isLanguageLoaded, setIsLanguageLoaded] = useState(false)
 
   useEffect(() => {
-    const savedLanguage = typeof window !== 'undefined' ? localStorage.getItem('kaifa-express-language') : null
-    if (savedLanguage) {
-      setCurrentLanguage(savedLanguage)
-    } else {
-      const browserLang = typeof window !== 'undefined' ? (navigator.language || navigator.languages?.[0] || 'en') : 'en'
-      const langCode = browserLang.split('-')[0].toLowerCase()
-      setCurrentLanguage(['en', 'zh', 'it'].includes(langCode) ? langCode : 'en')
+    if (typeof window === 'undefined') return
+    
+    try {
+      const savedLanguage = localStorage.getItem('kaifa-express-language')
+      if (savedLanguage) {
+        setCurrentLanguage(savedLanguage)
+      } else {
+        const browserLang = navigator.language || (navigator.languages && navigator.languages[0]) || 'en'
+        const langCode = browserLang.split('-')[0].toLowerCase()
+        setCurrentLanguage(['en', 'zh', 'it'].includes(langCode) ? langCode : 'en')
+      }
+    } catch (error) {
+      console.error('Error loading language preference:', error)
     }
+    
     setIsLanguageLoaded(true)
   }, [])
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return
+    
+    try {
       localStorage.setItem('kaifa-express-language', currentLanguage)
+    } catch (error) {
+      console.error('Error saving language preference:', error)
     }
   }, [currentLanguage])
 

@@ -24,14 +24,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <ClientProviders>
           <AuthProvider>
-            <LanguageProvider>
-              <div className="min-h-screen bg-[#f6f8fa]">
-                <Header />
-                <main>
-                  {children}
-                </main>
-              </div>
-            </LanguageProvider>
+            <div className="min-h-screen bg-[#f6f8fa]">
+              <Header />
+              <main>
+                {children}
+              </main>
+            </div>
           </AuthProvider>
         </ClientProviders>
       </body>
