@@ -21,7 +21,7 @@ import Link from 'next/link'
 export default function ProfilePage() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading, updateUser } = useAuth()
-  const { t, setLanguage, currentLanguage } = useTranslation()
+  const { t, setCurrentLanguage, currentLanguage } = useTranslation()
   
   const [formData, setFormData] = useState({
     name: '',
@@ -445,7 +445,7 @@ export default function ProfilePage() {
                       name="language"
                       value="zh"
                       checked={currentLanguage === 'zh'}
-                      onChange={() => setLanguage('zh')}
+                      onChange={() => setCurrentLanguage('zh')}
                       className="mr-3"
                     />
                     <span>中文</span>
@@ -456,7 +456,7 @@ export default function ProfilePage() {
                       name="language"
                       value="en"
                       checked={currentLanguage === 'en'}
-                      onChange={() => setLanguage('en')}
+                      onChange={() => setCurrentLanguage('en')}
                       className="mr-3"
                     />
                     <span>English</span>
