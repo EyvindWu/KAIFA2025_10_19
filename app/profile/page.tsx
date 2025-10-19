@@ -9,7 +9,6 @@ import {
   Mail, 
   Phone, 
   Lock, 
-  Globe, 
   Save, 
   ArrowLeft,
   Eye,
@@ -27,8 +26,7 @@ export default function ProfilePage() {
     name: '',
     email: '',
     phone: '',
-    company: '',
-    address: ''
+    company: ''
   })
   
   const [passwordData, setPasswordData] = useState({
@@ -68,9 +66,8 @@ export default function ProfilePage() {
       setFormData({
         name: user.name || '',
         email: user.email || '',
-        phone: user.phone || '',
-        company: user.company || '',
-        address: user.address || ''
+        phone: user.phone || '355 1234567',
+        company: user.company || 'KAIFOOD S.r.l.'
       })
     }
   }, [user])
@@ -281,19 +278,6 @@ export default function ProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
                     />
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      地址
-                    </label>
-                    <textarea
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      disabled={!isEditing}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
-                    />
-                  </div>
                 </div>
 
                 {isEditing && (
@@ -429,42 +413,6 @@ export default function ProfilePage() {
 
           {/* 侧边栏设置 */}
           <div className="space-y-6">
-            {/* 语言设置 */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Globe className="h-5 w-5 mr-2" />
-                  语言设置
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="language"
-                      value="zh"
-                      checked={currentLanguage === 'zh'}
-                      onChange={() => setCurrentLanguage('zh')}
-                      className="mr-3"
-                    />
-                    <span>中文</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="language"
-                      value="en"
-                      checked={currentLanguage === 'en'}
-                      onChange={() => setCurrentLanguage('en')}
-                      className="mr-3"
-                    />
-                    <span>English</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
             {/* 账户信息 */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
@@ -473,7 +421,7 @@ export default function ProfilePage() {
               <div className="p-6 space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">用户ID</p>
-                  <p className="text-sm font-medium text-gray-900">{user.id}</p>
+                  <p className="text-sm font-medium text-gray-900">KF{String(user.id).padStart(5, '0')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">注册时间</p>

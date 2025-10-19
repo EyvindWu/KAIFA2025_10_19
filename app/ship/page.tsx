@@ -71,7 +71,7 @@ const demoAddressList = Array.from({ length: 50 }, (_, i) => {
 
 export default function ShipPage() {
   const { t, currentLanguage } = useTranslation()
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const { user, isAuthenticated, isLoading, updateUser } = useAuth()
   
   // 用户权限状态
   const isLoggedIn = isAuthenticated && user
@@ -89,21 +89,21 @@ export default function ShipPage() {
      - ✅ 地址验证功能
      - ❌ 创建发货订单（显示登录提示）
      - ❌ 使用地址簿功能
-     - ❌ 申请月结权限
+     - ❌ 提交企业认证
   
   2. 已登录用户（未授权月结）：
      - ✅ 查看运费/时效报价
      - ✅ 地址验证功能
      - ✅ 创建发货订单（仅限微信支付）
      - ✅ 使用地址簿功能
-     - ✅ 申请月结权限
+     - ✅ 提交企业认证
   
   3. 已登录用户（已授权月结）：
      - ✅ 查看运费/时效报价
      - ✅ 地址验证功能
      - ✅ 创建发货订单（微信支付或月结）
      - ✅ 使用地址簿功能
-     - ❌ 申请月结权限（已有权限）
+     - ❌ 提交企业认证（已有权限）
   
   权限控制实现：
   - 地址簿按钮：未登录时禁用并显示提示
@@ -1490,14 +1490,14 @@ export default function ShipPage() {
           {canApplyMonthlyBilling && (
             <div className="mt-3 flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                请先申请月结权限，审核通过后方可使用
+                请先提交企业认证，审核通过后方可使用
               </div>
               <button
                 type="button"
                 onClick={() => setShowMonthlyBillingModal(true)}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                申请月结 →
+                提交企业认证 →
               </button>
             </div>
           )}
@@ -1505,8 +1505,8 @@ export default function ShipPage() {
           {!canApplyMonthlyBilling && !hasMonthlyBilling && isLoggedIn && (
             <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-sm text-gray-600">
-                <strong>月结申请状态</strong>
-                <p className="text-gray-500 mt-1">您的月结申请正在审核中，请耐心等待</p>
+                <strong>企业认证状态</strong>
+                <p className="text-gray-500 mt-1">您的企业认证正在审核中，请耐心等待</p>
               </div>
             </div>
           )}
@@ -1647,7 +1647,7 @@ export default function ShipPage() {
       
       {/* 月结申请弹窗 */}
       {showMonthlyBillingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">申请企业月结权限</h2>
@@ -1672,8 +1672,8 @@ export default function ShipPage() {
                 phone: formData.get('phone'),
                 address: formData.get('address'),
                 contactName: formData.get('contactName'),
-                email: 'user@example.com', // 应该从用户上下文获取
-                status: 'pending',
+                email: user?.email || 'user@example.com',
+                status: 'approved',
                 id: Date.now()
               };
               
@@ -1681,53 +1681,53 @@ export default function ShipPage() {
               requests.push(monthlyRequest);
               localStorage.setItem('kaifa-monthly-requests', JSON.stringify(requests));
               
+              // 立即更新用户的认证状态
+              updateUser({ monthlyBillingAuthorized: true });
+              
               setShowMonthlyBillingModal(false);
-              alert('月结申请已提交，请等待审核结果。');
+              alert('企业认证已完成！');
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    企业名称 <span className="text-red-500">*</span>
+                    商户名
                   </label>
                   <input
                     type="text"
                     name="companyName"
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    企业税号 (VAT/P.IVA) <span className="text-red-500">*</span>
+                    企业税号 (VAT/P.IVA)
                   </label>
+                  {/* TODO: 后端需验证P.IVA必须为11位数字 */}
                   <input
                     type="text"
                     name="vatNumber"
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    联系手机号 <span className="text-red-500">*</span>
+                    联系手机号
                   </label>
                   <input
                     type="tel"
                     name="phone"
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    企业注册地址 <span className="text-red-500">*</span>
+                    企业注册地址
                   </label>
                   <textarea
                     name="address"
-                    required
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -1735,12 +1735,11 @@ export default function ShipPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    企业联系人姓名 <span className="text-red-500">*</span>
+                    企业联系人姓名
                   </label>
                   <input
                     type="text"
                     name="contactName"
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

@@ -1,374 +1,338 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { 
   ArrowLeft,
-  CreditCard,
   Download,
   Eye,
-  Plus,
   Calendar,
-  Euro,
   FileText,
   CheckCircle,
   AlertCircle,
   Clock,
-  Filter,
-  Shield,
-  UserCheck,
-  CheckCircle2,
-  XCircle,
-  ChevronRight,
-  Bell,
-  Settings
+  Filter
 } from 'lucide-react'
-import { useTranslation } from '../utils/translations';
+import { useTranslation } from '../utils/translations'
+
+// Type definitions
+type InvoiceStatus = 'paid' | 'pending' | 'overdue'
+
+interface Invoice {
+  id: string
+  date: string
+  dueDate: string
+  amount: number
+  status: InvoiceStatus
+  description: string
+}
 
 export default function BillingPage() {
-  const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('overview')
-  const [selectedPeriod, setSelectedPeriod] = useState('current')
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
+  const { t } = useTranslation()
+  
+  // 筛选器状态
+  const [selectedYear, setSelectedYear] = useState<string>('all')
+  const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
-  // Mock data
-  const merchantStatus = {
-    isVerified: false,
-    verificationStatus: 'pending', // pending, approved, rejected
-    businessName: 'Sample Business Ltd.',
-    registrationDate: '2024-01-10',
-    monthlyBillingEligible: false
+  // 生成过去12个月的账单数据
+  const generateInvoices = (): Invoice[] => {
+    const invoices: Invoice[] = []
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth()
+    
+    const serviceTypes = [
+      'Express Delivery Services',
+      'Standard Delivery Services',
+      'International Shipping',
+      'Same-Day Delivery',
+      'Freight Services',
+      'Package Handling',
+      'Storage Services',
+      'Premium Logistics'
+    ]
+    
+    // 生成过去12个月的数据
+    for (let i = 0; i < 12; i++) {
+      const targetDate = new Date(currentYear, currentMonth - i, 1)
+      const year = targetDate.getFullYear()
+      const month = targetDate.getMonth()
+      
+      const invoiceDate = new Date(year, month, 1)
+      const dueDate = new Date(year, month + 1, 10)
+      const monthYear = targetDate.toLocaleString('default', { month: 'long', year: 'numeric' })
+      
+      // 确定状态
+      let status: InvoiceStatus
+      if (i === 0) {
+        status = 'pending' // 当前月
+      } else if (i === 1 && dueDate < now) {
+        status = 'overdue' // 上个月如果过期
+      } else if (i === 1) {
+        status = 'pending' // 上个月未过期
+      } else {
+        status = 'paid' // 更早的月份
+      }
+      
+      // 随机金额和服务类型
+      const amount = Math.floor(Math.random() * 400) + 50 + Math.random() * 0.99
+      const serviceType = serviceTypes[i % serviceTypes.length]
+      
+      invoices.push({
+        id: `INV-${year}-${String(month + 1).padStart(2, '0')}`,
+        date: invoiceDate.toISOString().split('T')[0],
+        dueDate: dueDate.toISOString().split('T')[0],
+        amount: Math.round(amount * 100) / 100,
+        status,
+        description: `${serviceType} - ${monthYear}`
+      })
+    }
+    
+    return invoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }
 
-  const monthlyBills = [
-    {
-      id: 'BILL-2024-01',
-      period: 'January 2024',
-      date: '2024-01-31',
-      dueDate: '2024-02-15',
-      amount: 1250.75,
-      status: 'paid',
-      shipments: 45,
-      description: 'Monthly shipping services - January 2024'
-    },
-    {
-      id: 'BILL-2024-02',
-      period: 'February 2024',
-      date: '2024-02-29',
-      dueDate: '2024-03-15',
-      amount: 1899.50,
-      status: 'pending',
-      shipments: 67,
-      description: 'Monthly shipping services - February 2024'
+  const allInvoices = useMemo(() => generateInvoices(), [])
+  
+  // 筛选后的账单
+  const filteredInvoices = useMemo(() => {
+    return allInvoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.date)
+      const invoiceYear = invoiceDate.getFullYear().toString()
+      
+      if (selectedYear !== 'all' && invoiceYear !== selectedYear) return false
+      if (selectedStatus !== 'all' && invoice.status !== selectedStatus) return false
+      
+      return true
+    })
+  }, [allInvoices, selectedYear, selectedStatus])
+  
+  // 计算账单总额
+  const yearlyTotal = useMemo(() => {
+    if (selectedYear === 'all') {
+      // 全部年份时，返回所有订单的总金额
+      return allInvoices.reduce((sum, invoice) => sum + invoice.amount, 0)
     }
-  ]
+    
+    // 特定年份时，返回该年份的总金额
+    return allInvoices
+      .filter(invoice => {
+        const invoiceYear = new Date(invoice.date).getFullYear().toString()
+        return invoiceYear === selectedYear
+      })
+      .reduce((sum, invoice) => sum + invoice.amount, 0)
+  }, [allInvoices, selectedYear])
+  
+  // 获取可用的年份
+  const availableYears = useMemo(() => {
+    const years = new Set(allInvoices.map(inv => new Date(inv.date).getFullYear().toString()))
+    return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a))
+  }, [allInvoices])
 
-  const recentInvoices = [
-    {
-      id: 'INV-2024-001',
-      date: '2024-01-15',
-      dueDate: '2024-02-15',
-      amount: 125.50,
-      status: 'paid',
-      description: 'Express Delivery Services - January 2024'
-    },
-    {
-      id: 'INV-2024-002',
-      date: '2024-01-10',
-      dueDate: '2024-02-10',
-      amount: 89.99,
-      status: 'pending',
-      description: 'Standard Delivery Services - January 2024'
-    },
-    {
-      id: 'INV-2024-003',
-      date: '2024-01-05',
-      dueDate: '2024-02-05',
-      amount: 245.75,
-      status: 'overdue',
-      description: 'Overnight Delivery Services - January 2024'
+  // 工具函数
+  const getStatusColor = (status: InvoiceStatus): string => {
+    const statusColors = {
+      paid: 'bg-green-100 text-green-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      overdue: 'bg-red-100 text-red-800'
     }
-  ]
-
-  const paymentMethods = [
-    {
-      id: 1,
-      type: 'credit_card',
-      name: 'Visa ending in 4242',
-      expiry: '12/25',
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: 'paypal',
-      name: 'PayPal Account',
-      email: 'user@example.com',
-      isDefault: false
-    }
-  ]
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'overdue':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+    return statusColors[status] || 'bg-gray-100 text-gray-800'
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <CheckCircle className="h-4 w-4" />
-      case 'pending':
-        return <Clock className="h-4 w-4" />
-      case 'overdue':
-        return <AlertCircle className="h-4 w-4" />
-      default:
-        return <Clock className="h-4 w-4" />
+  const getStatusIcon = (status: InvoiceStatus) => {
+    const statusIcons = {
+      paid: <CheckCircle className="h-4 w-4" />,
+      pending: <Clock className="h-4 w-4" />,
+      overdue: <AlertCircle className="h-4 w-4" />
     }
+    return statusIcons[status] || <Clock className="h-4 w-4" />
   }
 
-  const getVerificationStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'rejected':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getVerificationStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle2 className="h-4 w-4" />
-      case 'pending':
-        return <Clock className="h-4 w-4" />
-      case 'rejected':
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <Clock className="h-4 w-4" />
-    }
-  }
-
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',
       currency: 'EUR'
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE')
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
-  // 假数据，仿照发票样例
-  const invoice = {
-    company: {
-      name: 'KAIFA EXPRESS SRL',
-      address: 'Viale Montegrappa 246, 59100 Prato',
-      tel: '344/6772783',
-      email: 'kaifaexpress@gmail.com',
-      piva: 'IT02595340973',
-      iban: 'IT43V0339912500CC0030206640',
-      bic: 'EXRRITM2',
-    },
-    client: {
-      name: 'BELLA STORE SRO',
-      address: 'VODICKOVA 704/36, 11000 NOVE MESTO',
-      codiceFiscale: '000174',
-      partitaIVA: '17333211',
-    },
-    invoice: {
-      number: '000147/25',
-      date: '18-01-2025',
-      page: 1,
-      agent: '',
-      payment: 'CONTANTI',
-      reference: '',
-      bank: '',
-    },
-    items: [
-      { ref: 'KAIL03659/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 1, peso: '20,00', volume: '0,096', qta: 1, prezzo: '26,00', importo: '26,00', iva: 'A07' },
-      { ref: 'KAIL03660/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '39,00', volume: '0,525', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
-      { ref: 'KAIL04163/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '75,00', volume: '0,432', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
-      { ref: 'KAIL04466/24', desc: 'BELLA STORE SRO', city: 'NOVE MESTO', colli: 3, peso: '75,00', volume: '0,432', qta: 1, prezzo: '87,00', importo: '87,00', iva: 'A07' },
-    ],
-    totals: {
-      imponibile: '287,00',
-      iva: '0,00',
-      totaleNetto: '287,00',
-      dirittoFisso: '0,00',
-      speseBancarie: '0,00',
-      totaleDocumento: '287,00',
-      scadenza: '18-01-2025',
-      esenzioni: 'NON IMPONIBILE ART. 7',
-      bolli: '0,00',
-      totaleImposta: '0,00',
-    },
-    note: '',
-  };
+  const handleViewInvoice = (invoiceId: string) => {
+    console.log('View invoice:', invoiceId)
+    // TODO: 实现查看发票详情功能
+  }
+
+  const handleDownloadInvoice = (invoiceId: string) => {
+    console.log('Download invoice:', invoiceId)
+    // TODO: 实现下载发票功能
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center h-16">
-            <Link href="/" className="flex items-center text-gray-600 hover:text-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-5 w-5 mr-2" />
-              返回首页
+                {t('backToDashboard')}
             </Link>
-            <h1 className="ml-6 text-xl font-semibold text-gray-900">账单与发票</h1>
+              <h1 className="ml-6 text-xl font-semibold text-gray-900">{t('billingAndInvoices')}</h1>
+            </div>
           </div>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-8 text-black">
-        <div className="bg-white rounded-lg shadow-md p-8 relative text-black">
-          {/* 公司信息 */}
-          <div className="flex flex-col md:flex-row md:justify-between mb-4 text-black">
-            <div>
-              <div className="font-bold text-lg">{invoice.company.name}</div>
-              <div>{invoice.company.address}</div>
-              <div>Tel. {invoice.company.tel}</div>
-              <div>{invoice.company.email}</div>
-              <div>P.IVA {invoice.company.piva}</div>
-              <div>IBAN {invoice.company.iban}</div>
-              <div>BIC: {invoice.company.bic}</div>
-            </div>
-            <div className="mt-4 md:mt-0 text-right text-black">
-              <div>Spett.le</div>
-              <div>{invoice.client.name}</div>
-              <div>{invoice.client.address}</div>
-            </div>
-          </div>
-          {/* 发票基本信息 */}
-          <div className="flex flex-wrap gap-4 mb-4 text-sm text-black">
-            <div><span className="font-semibold">N.E DATA DOCUMENTO:</span> {invoice.invoice.number}</div>
-            <div><span className="font-semibold">DATA:</span> {invoice.invoice.date}</div>
-            <div><span className="font-semibold">CLIENTE:</span> {invoice.client.codiceFiscale}</div>
-            <div><span className="font-semibold">PARTITA IVA:</span> {invoice.client.partitaIVA}</div>
-            <div><span className="font-semibold">N.PAG.:</span> {invoice.invoice.page}</div>
-            <div><span className="font-semibold">MODALITÀ DI PAGAMENTO:</span> {invoice.invoice.payment}</div>
-              </div>
-          {/* 明细表格 */}
-          <div className="overflow-x-auto mb-4 text-black">
-            <table className="min-w-full border text-xs text-black">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border px-2 py-1">NS.RIF.</th>
-                  <th className="border px-2 py-1">DESCRIZIONE</th>
-                  <th className="border px-2 py-1">COLLI</th>
-                  <th className="border px-2 py-1">PESO</th>
-                  <th className="border px-2 py-1">VOLUME</th>
-                  <th className="border px-2 py-1">Q.TA'</th>
-                  <th className="border px-2 py-1">PREZZO</th>
-                  <th className="border px-2 py-1">IMPORTO</th>
-                  <th className="border px-2 py-1">IVA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1 whitespace-nowrap">{item.ref}</td>
-                    <td className="border px-2 py-1 whitespace-nowrap">{item.desc} <br /> {item.city}</td>
-                    <td className="border px-2 py-1 text-center">{item.colli}</td>
-                    <td className="border px-2 py-1 text-center">{item.peso}</td>
-                    <td className="border px-2 py-1 text-center">{item.volume}</td>
-                    <td className="border px-2 py-1 text-center">{item.qta}</td>
-                    <td className="border px-2 py-1 text-right">{item.prezzo}</td>
-                    <td className="border px-2 py-1 text-right">{item.importo}</td>
-                    <td className="border px-2 py-1 text-center">{item.iva}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* 金额汇总区 */}
-          <div className="grid grid-cols-2 gap-4 text-sm mb-4 text-black">
-              <div>
-              <div><span className="font-semibold">TOTALE:</span> {invoice.totals.totaleDocumento}</div>
-              <div><span className="font-semibold">SC. %:</span> 0,0</div>
-              <div><span className="font-semibold">TOTALE NETTO:</span> {invoice.totals.totaleNetto}</div>
-              <div><span className="font-semibold">DIRITTO FISSO:</span> {invoice.totals.dirittoFisso}</div>
-              </div>
-              <div>
-              <div><span className="font-semibold">SP. BANCARIE:</span> {invoice.totals.speseBancarie}</div>
-              <div><span className="font-semibold">ESENZIONI:</span> {invoice.totals.esenzioni}</div>
-              <div><span className="font-semibold">BOLLI:</span> {invoice.totals.bolli}</div>
-              <div><span className="font-semibold">TOTALE DOCUMENTO EUR:</span> <span className="font-bold text-lg">{invoice.totals.totaleDocumento}</span></div>
-            </div>
-          </div>
-          {/* 付款与到期日 */}
-          <div className="flex flex-wrap gap-4 text-sm mb-2 text-black">
-            <div><span className="font-semibold">SCADENZE:</span> {invoice.totals.scadenza}</div>
-            <div><span className="font-semibold">IMPORTO:</span> {invoice.totals.totaleDocumento}</div>
-          </div>
-          {/* 备注区 */}
-          <div className="text-xs text-black mt-2">Vi preghiamo di verificare l'esattezza dei Vostri dati anagrafici e fiscali, le cui eventuali modifiche dovranno essere tempestivamente comunicate in ottemperanza al D.L.223/06</div>
-          {/* 下载PDF按钮（占位） */}
-          <button className="absolute top-4 right-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-            <Download className="h-5 w-5" /> Scarica PDF
-                      </button>
-        </div>
-      </main>
 
-      {/* Verification Modal */}
-      {isVerificationModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('businessVerification')}</h3>
-            <p className="text-gray-600 mb-6">
-              {t('businessVerificationDescModal')}
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessName')}</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  placeholder={t('yourBusinessName')}
-                />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+            {/* Filters */}
+            <div className="bg-white shadow rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Filter className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-medium text-gray-900">{t('filters')}</h3>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Year Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('year')}
+                  </label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">{t('allYears')}</option>
+                    {availableYears.map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+          </div>
+
+                {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessRegistrationNumber')}</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  placeholder={t('vatNumberOrBusinessId')}
-                />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('status')}
+                  </label>
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">{t('allStatuses')}</option>
+                    <option value="paid">{t('paid')}</option>
+                    <option value="pending">{t('pending')}</option>
+                    <option value="overdue">{t('overdue')}</option>
+                  </select>
+                </div>
               </div>
+              
+              {/* Reset Button */}
+              {(selectedYear !== 'all' || selectedStatus !== 'all') && (
+                <div className="mt-4">
+                  <button
+                    onClick={() => {
+                      setSelectedYear('all')
+                      setSelectedStatus('all')
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {t('resetFilters')}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Yearly Total Summary */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg rounded-lg p-6">
+              <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('businessAddress')}</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brown-500"
-                  rows={3}
-                  placeholder={t('fullBusinessAddress')}
-                />
+                  <h3 className="text-white text-sm font-medium opacity-90">
+                    {selectedYear === 'all' ? '全部订单总金额' : `${selectedYear} 年度账单总额`}
+                  </h3>
+                  <p className="text-white text-3xl font-bold mt-2">
+                    {formatCurrency(yearlyTotal)}
+                  </p>
+                </div>
+                <div className="bg-white bg-opacity-20 rounded-full p-4">
+                  <FileText className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-white border-opacity-20">
+                <p className="text-white text-sm opacity-90">
+                  {selectedYear === 'all' 
+                    ? '基于全部订单的账单计算' 
+                    : `基于 ${selectedYear} 年的所有账单计算`
+                  }
+                </p>
               </div>
             </div>
-            <div className="flex space-x-3 mt-6">
+
+            {/* Recent Invoices */}
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">{t('recentInvoices')}</h3>
+                  <span className="text-sm text-gray-500">
+                    {filteredInvoices.length} {t('invoices')}
+                  </span>
+          </div>
+                {filteredInvoices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noInvoices')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('noInvoicesDescription')}</p>
+          </div>
+                ) : (
+            <div className="space-y-4">
+                    {filteredInvoices.map((invoice) => (
+                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-4">
+                        <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${getStatusColor(invoice.status)}`}>
+                          {getStatusIcon(invoice.status)}
+                          <span>{t(invoice.status)}</span>
+              </div>
+              <div>
+                          <p className="text-sm font-medium text-gray-900">{invoice.id}</p>
+                          <p className="text-sm text-gray-500">{invoice.description}</p>
+              </div>
+            </div>
+                      <div className="flex items-center space-x-6">
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</p>
+                          <p className="text-sm text-gray-500">{t('due')}: {formatDate(invoice.dueDate)}</p>
+                        </div>
+                        <div className="flex space-x-2">
               <button
-                onClick={() => setIsVerificationModalOpen(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                            onClick={() => handleViewInvoice(invoice.id)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title={t('viewInvoice')}
               >
-                {t('cancel')}
+                            <Eye className="h-5 w-5" />
               </button>
-              <button className="flex-1 px-4 py-2 bg-brown-600 text-white rounded-md hover:bg-brown-700 transition-colors">
-                {t('submitForReview')}
+                          <button 
+                            onClick={() => handleDownloadInvoice(invoice.id)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title={t('downloadInvoice')}
+                          >
+                            <Download className="h-5 w-5" />
               </button>
             </div>
           </div>
+                    </div>
+                  ))}
         </div>
       )}
+              </div>
+            </div>
+          </div>
+      </main>
     </div>
   )
 } 
