@@ -12,6 +12,9 @@ export interface User {
   permissions: string[]
   lastLogin?: string
   monthlyBillingAuthorized?: boolean
+  phone?: string
+  company?: string
+  address?: string
 }
 
 interface AuthContextType {
@@ -21,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User }>
   logout: () => void
   checkAuth: () => void
+  updateUser: (userData: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -139,13 +143,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData }
+      setUser(updatedUser)
+      localStorage.setItem('kaifa-auth-user', JSON.stringify(updatedUser))
+    }
+  }
+
   const value = {
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    updateUser
   }
 
   return (

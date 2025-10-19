@@ -220,8 +220,8 @@ export default function UserDashboard() {
         {showMonthlyModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={()=>setShowMonthlyModal(false)}>×</button>
-              <h2 className="text-lg font-bold mb-4">申请月结</h2>
+              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl" onClick={()=>setShowMonthlyModal(false)}>×</button>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">申请月结</h2>
               <form onSubmit={e => {
                 e.preventDefault();
                 const reqs = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
@@ -231,22 +231,22 @@ export default function UserDashboard() {
                 setMonthlyStatus('pending');
               }}>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">姓名</label>
-                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.name} onChange={e=>setMonthlyForm(f=>({...f, name: e.target.value}))} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                  <input className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" value={monthlyForm.name} onChange={e=>setMonthlyForm(f=>({...f, name: e.target.value}))} required />
                 </div>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">电话号</label>
-                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.phone} onChange={e=>setMonthlyForm(f=>({...f, phone: e.target.value}))} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">电话号</label>
+                  <input className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" value={monthlyForm.phone} onChange={e=>setMonthlyForm(f=>({...f, phone: e.target.value}))} required />
                 </div>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">P.IVA</label>
-                  <input className="w-full border px-3 py-2 rounded" value={monthlyForm.piva} onChange={e=>setMonthlyForm(f=>({...f, piva: e.target.value}))} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">P.IVA</label>
+                  <input className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" value={monthlyForm.piva} onChange={e=>setMonthlyForm(f=>({...f, piva: e.target.value}))} required />
                 </div>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">邮箱号</label>
-                  <input className="w-full border px-3 py-2 rounded bg-gray-100" value={user?.email||''} disabled />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">邮箱号</label>
+                  <input className="w-full border border-gray-300 px-3 py-2 rounded bg-gray-100 text-gray-900" value={user?.email||''} disabled />
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">提交申请</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium">提交申请</button>
               </form>
             </div>
           </div>
