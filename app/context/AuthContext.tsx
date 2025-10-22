@@ -47,7 +47,7 @@ const mockUsers = [
     password: 'manager123',
     name: 'Customer Service Manager',
     role: 'admin' as const,
-    permissions: ['orders', 'customers', 'shipments', 'reports', 'billing', 'customer_service'],
+    permissions: ['orders', 'customers', 'shipments', 'reports', 'billing', 'monthly_billing', 'customer_service'],
     avatar: '/avatars/manager.jpg',
     monthlyBillingAuthorized: true
   },

@@ -61,20 +61,19 @@ export default function MonthlyBillingApplicationPage() {
     if (user?.email) {
       // 为Tony Leung预设月结申请历史（已通过）
       if (user.email === 'tony.leung@example.com') {
-        const tonyRequest: MonthlyBillingRequest = {
+        const tonyRequest = {
           id: 1234567890,
-          companyName: 'Tony Leung Trading Co.',
-          vatNumber: 'DE123456789',
+          name: 'Tony Leung Trading Co.',
+          piva: 'DE123456789',
           phone: '+49 30 12345678',
-          address: 'Tony Street 30, Berlin, Germany',
-          contactName: 'Tony Leung',
           email: 'tony.leung@example.com',
           status: 'approved',
-          submittedAt: '2025-01-15T10:30:00.000Z'
+          createdAt: '2025-01-15 10:30:00',
+          approvedAt: '2025-01-15 15:45:00'
         }
         
         const requests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]')
-        const existingRequest = requests.find((req: MonthlyBillingRequest) => req.email === user.email)
+        const existingRequest = requests.find((req: any) => req.email === user.email)
         
         if (!existingRequest) {
           requests.push(tonyRequest)
@@ -84,25 +83,48 @@ export default function MonthlyBillingApplicationPage() {
       
       // 为Andy Liu预设月结申请历史（待审核）
       if (user.email === 'andy.liu@example.com') {
-        const andyRequest: MonthlyBillingRequest = {
+        const andyRequest = {
           id: 1234567891,
-          companyName: 'Andy Liu Import Export',
-          vatNumber: 'DE987654321',
+          name: 'Andy Liu Import Export',
+          piva: 'DE987654321',
           phone: '+49 40 87654321',
-          address: 'Andy Street 15, Hamburg, Germany',
-          contactName: 'Andy Liu',
           email: 'andy.liu@example.com',
           status: 'pending',
-          submittedAt: '2025-01-20T14:20:00.000Z'
+          createdAt: '2025-01-20 14:20:00'
         }
         
         const requests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]')
-        const existingRequest = requests.find((req: MonthlyBillingRequest) => req.email === user.email)
+        const existingRequestIndex = requests.findIndex((req: any) => req.email === user.email)
         
-        if (!existingRequest) {
+        if (existingRequestIndex === -1) {
+          // 不存在则添加
           requests.push(andyRequest)
-          localStorage.setItem('kaifa-monthly-requests', JSON.stringify(requests))
+        } else {
+          // 存在则重置为待审核状态
+          requests[existingRequestIndex] = {
+            ...andyRequest,
+            id: requests[existingRequestIndex].id
+          }
         }
+        localStorage.setItem('kaifa-monthly-requests', JSON.stringify(requests))
+      }
+      
+      // 添加额外的待审核申请（Lisa Chen）
+      const allRequests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]')
+      const lisaRequest = {
+        id: 1234567892,
+        name: 'Chen Global Logistics',
+        piva: 'DE456789123',
+        phone: '+49 89 98765432',
+        email: 'lisa.chen@example.com',
+        status: 'pending',
+        createdAt: '2025-01-22 09:15:00'
+      }
+      
+      const existingLisaRequest = allRequests.find((req: any) => req.id === 1234567892)
+      if (!existingLisaRequest) {
+        allRequests.push(lisaRequest)
+        localStorage.setItem('kaifa-monthly-requests', JSON.stringify(allRequests))
       }
       
       const requests = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]')

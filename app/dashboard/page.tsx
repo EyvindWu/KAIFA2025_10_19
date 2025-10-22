@@ -1069,10 +1069,25 @@ export default function UserDashboard() {
               setIsVerified(true);
               setShowMonthlyModal(false);
               
-              // 可选：保存到localStorage用于持久化演示
+              // 保存到localStorage用于持久化演示
               const reqs = JSON.parse(localStorage.getItem('kaifa-monthly-requests') || '[]');
-              reqs.push({ ...monthlyForm, email: user?.email, status: 'approved', id: Date.now() });
+              const newRequest = {
+                ...monthlyForm,
+                email: user?.email,
+                status: 'pending', // 改为待审核状态
+                id: Date.now(),
+                createdAt: new Date().toLocaleString('zh-CN', { 
+                  year: 'numeric', 
+                  month: '2-digit', 
+                  day: '2-digit', 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  second: '2-digit'
+                })
+              };
+              reqs.push(newRequest);
               localStorage.setItem('kaifa-monthly-requests', JSON.stringify(reqs));
+              setMonthlyStatus('pending');
             }}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">企业名称</label>

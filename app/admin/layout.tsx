@@ -15,9 +15,8 @@ import {
   Settings, 
   LogOut, 
   User,
-  Shield,
-  Bell,
-  Search
+  Receipt,
+  ClipboardCheck
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from '../utils/translations'
@@ -29,7 +28,6 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const { user, logout, isAuthenticated, isLoading } = useAuth()
 
@@ -59,11 +57,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     
     // 业务管理功能 - Admin 和 Super Admin
     { name: t('dashboard'), href: user?.role === 'super_admin' ? '/system_admin/dashboard' : '/admin/dashboard', icon: Home, permission: 'all', role: 'all' },
-    { name: t('orders'), href: '/admin/orders', icon: Package, permission: 'orders', role: 'admin' },
-    { name: t('customers'), href: '/admin/customers', icon: Users, permission: 'customers', role: 'admin' },
-    { name: t('shipments'), href: '/admin/shipments', icon: Truck, permission: 'shipments', role: 'admin' },
-    { name: t('billing'), href: '/admin/billing', icon: CreditCard, permission: 'billing', role: 'admin' },
-    { name: t('reports'), href: '/admin/reports', icon: BarChart3, permission: 'reports', role: 'admin' },
+    { name: '客户管理', href: '/admin/customers', icon: Users, permission: 'customers', role: 'admin' },
+    { name: '月结审核', href: '/admin/monthly-billing-requests', icon: ClipboardCheck, permission: 'monthly_billing', role: 'admin' },
+    { name: '账单管理', href: '/admin/billing-management', icon: Receipt, permission: 'billing', role: 'admin' },
   ]
 
   const hasPermission = (permission: string, requiredRole?: string) => {
@@ -167,58 +163,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <div className="lg:pl-64 flex-1 w-full">
-        <div className="p-6">
-          {/* Top Bar */}
-          <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
-            <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
-                
-                {/* Search */}
-                <div className="ml-4 flex-1 max-w-lg">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder={t('searchPlaceholder')}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                {/* Notifications */}
-                <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                  <Bell className="h-5 w-5" />
-                </button>
-                
-                {/* User Menu */}
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                    <User className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="hidden md:block">
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Page Content */}
-          <main className="p-4 sm:p-6 lg:p-8 min-h-0">
-            {children}
-          </main>
+        {/* Mobile Menu Button - Only shows on mobile */}
+        <div className="lg:hidden fixed top-4 left-4 z-20">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-md bg-white shadow-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
+
+        {/* Page Content */}
+        <main className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
 
       {/* Mobile Overlay */}

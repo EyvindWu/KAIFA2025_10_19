@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { 
   Users,
+  Search,
   UserPlus,
   Edit,
   Trash2,
@@ -13,198 +14,194 @@ import {
   CreditCard,
   UserCheck,
   UserX,
-  Search,
   X
 } from 'lucide-react'
 import { useTranslation } from '../../utils/translations'
 
-export default function AdminUsersPage() {
-  const { t } = useTranslation()
+export default function CustomersPage() {
+  const { t } = useTranslation();
   
-  // D 用户管理状态
-  const [userSearch, setUserSearch] = useState('')
-  const [selectedUserGroup, setSelectedUserGroup] = useState('all')
-  const [editingUser, setEditingUser] = useState<any>(null)
-  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false)
-  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
+  // 用户管理状态
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedUserGroup, setSelectedUserGroup] = useState('all');
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
 
-  // 价格组定义
+  // 价格组/费率组定义
   const priceGroups = [
-    { id: 'standard', name: '标准组', discount: 0, description: '标准价格' },
-    { id: 'vip', name: 'VIP组', discount: 10, description: '享受10%折扣' },
-    { id: 'enterprise', name: '企业组', discount: 20, description: '享受20%折扣' },
-    { id: 'premium', name: '高级组', discount: 30, description: '享受30%折扣' }
-  ]
+    { id: 'group40', name: '40%组', discount: 40, description: '享受40%折扣' },
+    { id: 'group50', name: '50%组', discount: 50, description: '享受50%折扣' }
+  ];
 
-  // D1: 用户数据
+  // 用户数据
   const [users, setUsers] = useState([
     {
       id: 'U001',
       username: 'andy.liu',
       fullName: 'Andy Liu',
       email: 'andy.liu@example.com',
-      phone: '+39 351 234 5678',
-      company: 'KAIFOOD S.r.l.',
-      priceGroup: 'vip',
+      phone: '+49 176 12345678',
+      company: 'Liu Trading GmbH',
+      priceGroup: 'group40',
       status: 'active',
-      totalOrders: 156,
-      totalSpent: 8234.50,
-      registeredDate: '2023-01-15',
-      address: 'Via Roma 123, 20121 Milano'
+      registeredDate: '2023-05-10',
+      totalOrders: 45,
+      totalSpent: 2350.50,
+      address: 'Musterstraße 123, 10115 Berlin'
     },
     {
       id: 'U002',
       username: 'maria.schneider',
       fullName: 'Maria Schneider',
-      email: 'maria.schneider@example.de',
-      phone: '+49 176 987 6543',
-      company: 'Schmidt GmbH',
-      priceGroup: 'enterprise',
+      email: 'maria@schneider-logistics.de',
+      phone: '+49 30 98765432',
+      company: 'Schneider Logistics',
+      priceGroup: 'group50',
       status: 'active',
-      totalOrders: 203,
-      totalSpent: 12456.80,
-      registeredDate: '2022-11-08',
-      address: 'Hauptstraße 45, 10115 Berlin'
+      registeredDate: '2023-03-15',
+      totalOrders: 128,
+      totalSpent: 8920.30,
+      address: 'Hauptstraße 45, 20095 Hamburg'
     },
     {
       id: 'U003',
       username: 'john.doe',
       fullName: 'John Doe',
-      email: 'john.doe@example.com',
-      phone: '+33 6 12 34 56 78',
+      email: 'john.doe@email.com',
+      phone: '+49 89 11223344',
       company: '',
-      priceGroup: 'standard',
+      priceGroup: 'group40',
       status: 'active',
-      totalOrders: 45,
-      totalSpent: 2340.20,
-      registeredDate: '2024-03-22',
-      address: 'Rue de la Paix 78, 75002 Paris'
+      registeredDate: '2024-01-05',
+      totalOrders: 12,
+      totalSpent: 560.00,
+      address: 'Bahnhofstraße 78, 80335 München'
     },
     {
       id: 'U004',
-      username: 'lisa.muller',
+      username: 'lisa.mueller',
       fullName: 'Lisa Müller',
-      email: 'lisa.muller@example.de',
-      phone: '+49 151 876 5432',
-      company: 'Tech Solutions AG',
-      priceGroup: 'premium',
+      email: 'lisa.mueller@premium-shop.de',
+      phone: '+49 221 55667788',
+      company: 'Premium Shop',
+      priceGroup: 'group50',
       status: 'active',
-      totalOrders: 312,
-      totalSpent: 18765.90,
-      registeredDate: '2022-05-10',
-      address: 'Königsallee 88, 40212 Düsseldorf'
+      registeredDate: '2022-11-20',
+      totalOrders: 256,
+      totalSpent: 15680.75,
+      address: 'Kölner Straße 12, 50667 Köln'
     },
     {
       id: 'U005',
       username: 'thomas.weber',
       fullName: 'Thomas Weber',
-      email: 'thomas.weber@example.at',
-      phone: '+43 664 123 4567',
-      company: 'Alpine Trading',
-      priceGroup: 'enterprise',
+      email: 'thomas@weber-import.de',
+      phone: '+49 711 99887766',
+      company: 'Weber Import GmbH',
+      priceGroup: 'group50',
       status: 'active',
-      totalOrders: 178,
-      totalSpent: 9876.40,
-      registeredDate: '2023-07-19',
-      address: 'Kärntner Straße 12, 1010 Wien'
+      registeredDate: '2023-07-18',
+      totalOrders: 89,
+      totalSpent: 4520.20,
+      address: 'Stuttgarter Platz 5, 70173 Stuttgart'
     },
     {
       id: 'U006',
       username: 'sarah.klein',
       fullName: 'Sarah Klein',
-      email: 'sarah.klein@example.ch',
-      phone: '+41 79 234 5678',
+      email: 'sarah.klein@gmail.com',
+      phone: '+49 69 33445566',
       company: '',
-      priceGroup: 'standard',
+      priceGroup: 'group40',
       status: 'inactive',
-      totalOrders: 23,
-      totalSpent: 1234.50,
-      registeredDate: '2024-01-05',
-      address: 'Bahnhofstrasse 100, 8001 Zürich'
+      registeredDate: '2023-09-10',
+      totalOrders: 3,
+      totalSpent: 125.50,
+      address: 'Mainzer Landstraße 200, 60326 Frankfurt'
     }
-  ])
+  ]);
 
-  // D1: 用户筛选逻辑
+  // 用户筛选逻辑
   const filteredUsers = users.filter(user => {
     // 搜索筛选
     if (userSearch) {
-      const searchLower = userSearch.toLowerCase()
+      const searchLower = userSearch.toLowerCase();
       const matchSearch = 
         user.fullName.toLowerCase().includes(searchLower) ||
         user.username.toLowerCase().includes(searchLower) ||
         user.email.toLowerCase().includes(searchLower) ||
         user.id.toLowerCase().includes(searchLower) ||
-        (user.company && user.company.toLowerCase().includes(searchLower))
-      
-      if (!matchSearch) return false
+        (user.company && user.company.toLowerCase().includes(searchLower));
+      if (!matchSearch) return false;
     }
     
-    // 价格组筛选
+    // 分组筛选
     if (selectedUserGroup !== 'all' && user.priceGroup !== selectedUserGroup) {
-      return false
+      return false;
     }
     
-    return true
-  })
+    return true;
+  });
 
-  // D2: 更改用户分组
+  // 更改用户分组
   const handleChangeUserGroup = (userId: string, newGroup: string) => {
     setUsers(users.map(u => 
       u.id === userId ? { ...u, priceGroup: newGroup } : u
-    ))
-  }
+    ));
+  };
 
-  // D3: 编辑用户
+  // 编辑用户
   const handleEditUser = (user: any) => {
-    setEditingUser({...user})
-    setIsEditUserModalOpen(true)
-  }
+    setEditingUser({ ...user });
+    setIsEditUserModalOpen(true);
+  };
 
   const handleSaveUser = () => {
     if (editingUser) {
       setUsers(users.map(u => 
         u.id === editingUser.id ? editingUser : u
-      ))
-      setIsEditUserModalOpen(false)
-      setEditingUser(null)
+      ));
+      setIsEditUserModalOpen(false);
+      setEditingUser(null);
     }
-  }
+  };
 
-  // D4: 新建用户
+  // 新建用户
   const handleCreateUser = (newUser: any) => {
-    const userId = `U${String(users.length + 1).padStart(3, '0')}`
+    const userId = `U${String(users.length + 1).padStart(3, '0')}`;
     setUsers([...users, { 
       ...newUser, 
       id: userId,
       totalOrders: 0,
       totalSpent: 0,
       registeredDate: new Date().toISOString().split('T')[0]
-    }])
-    setIsCreateUserModalOpen(false)
-  }
+    }]);
+    setIsCreateUserModalOpen(false);
+  };
 
-  // D4: 删除用户
+  // 删除用户
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('确定要删除此用户吗？此操作不可撤销。')) {
-      setUsers(users.filter(u => u.id !== userId))
+      setUsers(users.filter(u => u.id !== userId));
     }
-  }
+  };
 
   return (
-    <div className="p-6">
-      {/* 页面标题和操作栏 */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
+    <section className="space-y-6">
+      {/* 用户管理模块 */}
+      <div className="bg-white rounded-lg shadow-md">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="h-7 w-7 text-purple-600" />
-              客户管理
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-600" />
+              用户管理
               <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
                 {filteredUsers.length} 用户
               </span>
-            </h1>
+            </h3>
             
-            {/* D4: 新建用户按钮 */}
+            {/* 新建用户按钮 */}
             <button
               onClick={() => setIsCreateUserModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
@@ -215,10 +212,10 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* D1: 搜索和筛选 */}
+        {/* 搜索和筛选 */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* D1: 搜索框 */}
+            {/* 搜索框 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <Search className="h-4 w-4 inline mr-1" />
@@ -233,7 +230,7 @@ export default function AdminUsersPage() {
               />
             </div>
 
-            {/* D2: 价格组筛选 */}
+            {/* 价格组筛选 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <CreditCard className="h-4 w-4 inline mr-1" />
@@ -255,7 +252,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* D1: 用户列表 */}
+        {/* 用户列表 */}
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-50">
@@ -272,7 +269,7 @@ export default function AdminUsersPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => {
-                const group = priceGroups.find(g => g.id === user.priceGroup)
+                const group = priceGroups.find(g => g.id === user.priceGroup);
                 return (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     {/* 用户ID */}
@@ -304,7 +301,7 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     
-                    {/* D2: 价格组（可调整） */}
+                    {/* 价格组（可调整） */}
                     <td className="px-6 py-4">
                       <select
                         value={user.priceGroup}
@@ -354,19 +351,10 @@ export default function AdminUsersPage() {
                       {user.registeredDate}
                     </td>
                     
-                    {/* D3 & D4: 操作按钮 */}
+                    {/* 操作按钮 */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        {/* D3: 编辑用户 */}
-                        <button 
-                          onClick={() => handleEditUser(user)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="编辑用户"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        
-                        {/* D4: 删除用户 */}
+                        {/* 删除用户 */}
                         <button 
                           onClick={() => handleDeleteUser(user.id)}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -377,7 +365,7 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -391,7 +379,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* D3: 编辑用户弹窗 */}
+      {/* 编辑用户弹窗 */}
       {isEditUserModalOpen && editingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -403,8 +391,8 @@ export default function AdminUsersPage() {
               </h3>
               <button 
                 onClick={() => {
-                  setIsEditUserModalOpen(false)
-                  setEditingUser(null)
+                  setIsEditUserModalOpen(false);
+                  setEditingUser(null);
                 }}
                 className="text-gray-400 hover:text-gray-600 transition"
               >
@@ -499,7 +487,7 @@ export default function AdminUsersPage() {
                 </div>
                 
                 {/* 状态 */}
-        <div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     账号状态
                   </label>
@@ -518,8 +506,8 @@ export default function AdminUsersPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     地址
                   </label>
-          <input
-            type="text"
+                  <input
+                    type="text"
                     value={editingUser.address}
                     onChange={(e) => setEditingUser({...editingUser, address: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -532,8 +520,8 @@ export default function AdminUsersPage() {
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
               <button
                 onClick={() => {
-                  setIsEditUserModalOpen(false)
-                  setEditingUser(null)
+                  setIsEditUserModalOpen(false);
+                  setEditingUser(null);
                 }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
               >
@@ -551,7 +539,7 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* D4: 新建用户弹窗 */}
+      {/* 新建用户弹窗 */}
       {isCreateUserModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -572,8 +560,8 @@ export default function AdminUsersPage() {
             {/* 弹窗内容 */}
             <div className="px-6 py-4">
               <form onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
                 handleCreateUser({
                   username: formData.get('username'),
                   fullName: formData.get('fullName'),
@@ -583,7 +571,7 @@ export default function AdminUsersPage() {
                   priceGroup: formData.get('priceGroup'),
                   status: 'active',
                   address: formData.get('address')
-                })
+                });
               }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* 用户名 */}
@@ -601,27 +589,27 @@ export default function AdminUsersPage() {
                   </div>
                   
                   {/* 全名 */}
-        <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       全名 <span className="text-red-500">*</span>
                     </label>
-          <input
-            type="text"
+                    <input
+                      type="text"
                       name="fullName"
-            required
+                      required
                       placeholder="例如: John Doe"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+                    />
+                  </div>
                   
                   {/* 邮箱 */}
-        <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       邮箱 <span className="text-red-500">*</span>
                     </label>
-          <input
-            type="email"
-            name="email"
+                    <input
+                      type="email"
+                      name="email"
                       required
                       placeholder="例如: john@example.com"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -636,7 +624,7 @@ export default function AdminUsersPage() {
                     <input
                       type="tel"
                       name="phone"
-            required
+                      required
                       placeholder="例如: +49 176 12345678"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                     />
@@ -652,11 +640,11 @@ export default function AdminUsersPage() {
                       name="company"
                       placeholder="选填"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+                    />
+                  </div>
                   
                   {/* 价格组 */}
-        <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       价格组 <span className="text-red-500">*</span>
                     </label>
@@ -678,14 +666,14 @@ export default function AdminUsersPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       地址 <span className="text-red-500">*</span>
                     </label>
-          <input
+                    <input
                       type="text"
                       name="address"
-            required
+                      required
                       placeholder="例如: Musterstraße 123, 10115 Berlin"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+                    />
+                  </div>
                 </div>
                 
                 {/* 弹窗底部 */}
@@ -697,19 +685,20 @@ export default function AdminUsersPage() {
                   >
                     取消
                   </button>
-        <button
-          type="submit"
+                  <button
+                    type="submit"
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-        >
+                  >
                     <UserPlus className="h-4 w-4" />
                     创建用户
-        </button>
+                  </button>
                 </div>
-      </form>
+              </form>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   )
-} 
+}
+
